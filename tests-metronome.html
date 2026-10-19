@@ -84,6 +84,22 @@ try{
   await load();w=frame.contentWindow;d=w.document;$=id=>d.getElementById(id);
   assert($('bpm').value==='120'&&$('beats-per-bar').value==='6'&&!$('accent-first').checked&&$('volume').value==='0');assert($('metro-toggle').getAttribute('aria-pressed')==='false');
  });
+ await test('Tap records presses immediately, including releases outside, without counting clicks twice',()=>{
+  let now=3000;Object.defineProperty(w.performance,'now',{value:()=>now});
+  const tap=$('tap-tempo');
+  const press=()=>tap.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,button:0,isPrimary:true,pointerType:'touch'}));
+  const click=()=>tap.dispatchEvent(new w.MouseEvent('click',{bubbles:true,detail:1}));
+  $('bpm').value=80;$('bpm').dispatchEvent(new w.Event('change'));
+  press();now=3200;click();
+  now=3500;press();assert($('bpm').value==='120','second press must set 120 BPM before release');
+  now=3900;click();assert($('bpm').value==='120','release click must not count again');
+  now=4000;press();
+  d.body.dispatchEvent(new w.PointerEvent('pointerup',{bubbles:true,button:0,isPrimary:true}));
+  now=4500;press();assert($('bpm').value==='120','a release outside must not lose the press');
+  now=4750;tap.dispatchEvent(new w.PointerEvent('pointerdown',{button:2,isPrimary:true}));
+  now=5000;press();assert($('bpm').value==='120','right clicks must not count');
+  now=8000;tap.click();now=9000;tap.click();assert($('bpm').value==='60','keyboard and assistive clicks still work');
+ });
  let audio;Object.defineProperty(w,'AudioContext',{configurable:true,value:class extends FakeAudio{constructor(){super();audio=this}}});
  await test('Start and Stop work; Space toggles without hijacking form controls',async()=>{
   $('metro-toggle').click();await wait(20);assert($('metro-toggle').textContent==='Stop metronome');assert(audio.notes.length>0);

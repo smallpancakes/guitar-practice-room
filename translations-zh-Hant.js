@@ -1,5 +1,8 @@
 // English source messages are the stable catalog keys. Keep chord and note symbols unchanged.
 export default {
+  "Common changes (25)": "常見轉換（25 組）",
+  "Custom pair": "自選和弦",
+  "Pick for me": "幫我選",
   "Practice along with smallpancakes’s guitar diary. Tools for chord changes, keeping time, and learning the fretboard—with note-name and staff answers.": "跟著 smallpancakes 的吉他日記一起練習。和弦轉換、節拍器與指板練習，支援音名與五線譜作答。",
   "smallpancakes’s guitar practice room": "smallpancakes 的吉他練習室",
   "smallpancakes’s guitar practice room · One minute changes": "smallpancakes 的吉他練習室 · 一分鐘和弦轉換",

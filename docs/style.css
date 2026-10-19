@@ -326,3 +326,9 @@ p:empty { display: none; }
   .metronome-panel { padding: 16px; }
   .metronome-panel .meter-settings { flex-wrap: wrap; }
 }
+
+.pair-presets { max-width: 390px; margin: 0 auto 20px; }
+.pair-presets > label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 7px; }
+.pair-preset-controls { display: flex; gap: 8px; }
+.pair-preset-controls select { flex: 1; min-width: 0; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font-size: 16px; }
+.pair-preset-controls button { flex-shrink: 0; min-height: 44px; padding: 8px 12px; }

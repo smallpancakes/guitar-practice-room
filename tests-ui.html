@@ -15,14 +15,32 @@ assert($('chord-a').value==='A'&&$('chord-b').value==='D','swap restores chord o
 log.push('PASS Swap button exchanges both chord selections');
 $('chord-b').value='A';$('chord-b').dispatchEvent(new w.Event('change'));assert($('listen').disabled,'same pair disabled');$('chord-b').value='D';$('chord-b').dispatchEvent(new w.Event('change'));
 log.push('PASS Identical chords cannot start a round');
+const expectedPairs='A,C A,G A,E A,Em A,D A,Dm C,G C,E C,D C,Dm C,Am C,Em G,E G,D G,Dm G,Am G,Em E,D E,Dm E,Am D,Am D,Em Dm,Am Dm,Em Am,Em'.split(' ');
+assert($('common-pair').options.length===26,'25 pairs and custom option');
+assert([...$('common-pair').options].slice(1).map(o=>o.textContent.replace(' ↔ ', ',')).join(' ')===expectedPairs.join(' '),'exact supplied pairs in order');
+for(const option of [...$('common-pair').options].slice(1)){
+ $('common-pair').value=option.value;$('common-pair').dispatchEvent(new w.Event('change'));
+ assert(`${$('chord-a').value} ↔ ${$('chord-b').value}`===option.textContent,'preset applies both chords');
+ assert($('log-context').textContent.startsWith(option.textContent),'preset updates history');
+}
+const originalRandom=w.Math.random;w.Math.random=()=>0;
+for(let i=0;i<3;i++){
+ const before=$('common-pair').value;$('random-pair').click();
+ assert($('common-pair').value&&$('common-pair').value!==before,'random avoids current pair');
+}
+w.Math.random=originalRandom;
+const preset=$('common-pair').value;$('swap-chords').click();assert($('common-pair').value===preset,'reverse pair stays selected');
+$('chord-a').value='F';$('chord-a').dispatchEvent(new w.Event('change'));assert($('common-pair').value==='','custom chord clears preset');
+$('chord-a').value='A';$('chord-b').value='D';$('chord-b').dispatchEvent(new w.Event('change'));
+log.push('PASS All 25 presets, random choice, reverse and custom pairs stay in sync');
 const nativeTimeout=w.setTimeout.bind(w);w.setTimeout=(fn,ms,...args)=>nativeTimeout(fn,ms===60000?80:ms,...args);
-$('manual').click();assert($('tap').hidden===false,'manual ready');assert($('count').textContent==='0','waits for first tap');$('tap').click();assert($('count').textContent==='1','first tap counted');
+$('manual').click();assert($('common-pair').disabled&&$('random-pair').disabled,'presets locked during session');$('random-pair').click();assert($('chord-b').value==='D','locked random preserves pair');assert($('tap').hidden===false,'manual ready');assert($('count').textContent==='0','waits for first tap');$('tap').click();assert($('count').textContent==='1','first tap counted');
 d.dispatchEvent(new w.KeyboardEvent('keydown',{code:'Space',bubbles:true}));assert($('count').textContent==='2','space counted');
 d.dispatchEvent(new w.KeyboardEvent('keydown',{code:'Space',repeat:true,bubbles:true}));assert($('count').textContent==='2','repeat ignored');
-await wait(100);assert(!$('result').hidden,'result shown');assert($('final-count').value==='2','count copied');
+await wait(100);assert(!$('result').hidden,'result shown');assert($('common-pair').disabled,'presets locked while reviewing');assert($('final-count').value==='2','count copied');
 log.push('PASS Manual start, Space counting, repeat prevention and completion');
 $('final-count').value='-1';$('save').click();assert(!$('error').hidden,'invalid result error');
-$('final-count').value='12';$('save').click();assert($('result').hidden,'result closed');assert($('session-total').textContent==='1 session','saved row');assert(JSON.parse(localStorage.getItem(storageKey))[0].count===12,'saved corrected count');
+$('final-count').value='12';$('save').click();assert($('result').hidden,'result closed');assert(!$('common-pair').disabled&&!$('random-pair').disabled,'presets unlocked after save');assert($('session-total').textContent==='1 session','saved row');assert(JSON.parse(localStorage.getItem(storageKey))[0].count===12,'saved corrected count');
 log.push('PASS Invalid result rejected and corrected result saved');
 await load();w=frame.contentWindow;d=w.document;$=id=>d.getElementById(id);assert($('session-total').textContent==='1 session','history persists');
 d.querySelector('.swap').click();assert($('session-total').textContent==='1 session','reverse pair retains history');

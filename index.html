@@ -7,8 +7,8 @@
   <script src="palette.js"></script><link rel="stylesheet" href="palettes.css">
   <title>smallpancakes’s guitar practice room · One minute changes</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="stylesheet" href="style.css?v=9">
-  <script type="module" src="app.js?v=6"></script>
+  <link rel="stylesheet" href="style.css?v=10">
+  <script type="module" src="app.js?v=7"></script>
 </head>
 <body>
   <header class="site-header"><a class="wordmark" href="./" aria-label="smallpancakes’s guitar practice room home"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 4v20M14 4v20M22 4v20M3 9h22M3 19h22"/><circle cx="14" cy="9" r="3"/><circle cx="6" cy="19" r="3"/></svg><span class="wordmark-text"><span class="wordmark-owner">smallpancakes’s</span><span>guitar practice room<span class="wordmark-dot">.</span></span></span></a><div class="header-actions"><label class="palette-control language-control" for="language">Language<select id="language" translate="no"><option value="en" lang="en">English</option><option value="zh-Hant" lang="zh-Hant">繁體中文</option></select></label><label class="palette-control" for="palette">Palette<select id="palette"><option value="pancake">Pancake</option><option value="pastel">Original pastel</option></select></label></div></header>
@@ -19,6 +19,7 @@
       <section class="practice" aria-label="Practice timer">
         <div class="practice-top"><h2>Chord pair</h2><span class="duration">60 seconds</span></div>
         <div class="chord-pair"><label>First chord<select id="chord-a" aria-label="First chord"></select></label><button class="swap" id="swap-chords" type="button" aria-label="Swap first and second chords" title="Swap chords"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 11h22m-6-6 6 6-6 6M27 23H5m6-6-6 6 6 6"/></svg></button><label>Second chord<select id="chord-b" aria-label="Second chord"></select></label></div>
+        <div class="pair-presets"><label for="common-pair">Common changes (25)</label><div class="pair-preset-controls"><select id="common-pair"><option value="">Custom pair</option></select><button id="random-pair" class="secondary" type="button">Pick for me</button></div></div>
         <div class="timer-area"><div class="status" id="status" role="status">Ready</div><div class="timer" id="timer" aria-label="60 seconds remaining">1:00</div><div class="time-track" aria-hidden="true"><div id="time-fill"></div></div><div class="count-line"><strong id="count">0</strong><span id="count-label">estimated changes</span></div></div>
         <p class="instruction" id="instruction">First strum starts the 60-second timer.</p>
         <div class="main-actions"><button class="primary" id="listen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 10v2a6 6 0 0 0 12 0v-2M12 18v3m-3 0h6"/></svg>Start listening</button><button class="secondary" id="manual">Count manually</button><button class="secondary" id="cancel" hidden>Cancel session</button><button class="primary" id="tap" hidden>Count a change <kbd>Space</kbd></button></div>

@@ -2,6 +2,13 @@ import { t, locale, lockLanguage } from './i18n.js';
 import { StrumDetector, guitarBands, PracticeRound, pairKey, validSession } from './engine.js?v=3';
 const $ = id => document.getElementById(id);
 const chords = ['A', 'D', 'E', 'Am', 'Dm', 'Em', 'C', 'G', 'F', 'Bm', 'B7', 'A7', 'D7', 'E7', 'G7', 'C7', 'Fmaj7'];
+const commonPairs = [
+  ['A', 'C'], ['A', 'G'], ['A', 'E'], ['A', 'Em'], ['A', 'D'], ['A', 'Dm'],
+  ['C', 'G'], ['C', 'E'], ['C', 'D'], ['C', 'Dm'], ['C', 'Am'], ['C', 'Em'],
+  ['G', 'E'], ['G', 'D'], ['G', 'Dm'], ['G', 'Am'], ['G', 'Em'],
+  ['E', 'D'], ['E', 'Dm'], ['E', 'Am'], ['D', 'Am'], ['D', 'Em'],
+  ['Dm', 'Am'], ['Dm', 'Em'], ['Am', 'Em'],
+];
 const storageKey = 'practice-room.sessions.v1';
 let sessions = [], state = 'idle', mode = 'mic', round, detector, stream, context, analyser, samples, frequencies, bands, frame, timeout, requestId = 0, calibrationEnd, wakeLock;
 let storageWarning = '';
@@ -24,12 +31,31 @@ $('swap-chords').addEventListener('click', () => {
   $('chord-b').value = first;
   clearError(); renderHistory(); updateControls();
 });
+for (const [a, b] of commonPairs) {
+  $('common-pair').add(new Option(`${a} ↔ ${b}`, pairKey(a, b)));
+}
+function choosePair(pair) {
+  if (state !== 'idle' || !pair) return;
+  [$('chord-a').value, $('chord-b').value] = pair;
+  clearError(); renderHistory(); updateControls();
+}
+$('common-pair').addEventListener('change', () => {
+  choosePair(commonPairs.find(pair => pairKey(...pair) === $('common-pair').value));
+  updateControls();
+});
+$('random-pair').addEventListener('click', () => {
+  const choices = commonPairs.filter(pair => pairKey(...pair) !== pairKey(...selectedPair()));
+  choosePair(choices[Math.floor(Math.random() * choices.length)]);
+});
 function selectedPair() { return [$('chord-a').value, $('chord-b').value]; }
 function showError(message) { $('error').textContent = message; $('error').hidden = false; }
 function clearError() { $('error').hidden = true; }
 function setStatus(title, instruction) { $('status').textContent = title; $('instruction').textContent = instruction; }
 function updateControls() {
   lockLanguage(state !== 'idle');
+  const preset = commonPairs.find(pair => pairKey(...pair) === pairKey(...selectedPair()));
+  $('common-pair').value = preset ? pairKey(...preset) : '';
+  $('common-pair').disabled = $('random-pair').disabled = state !== 'idle';
   const active = ['requesting', 'checking', 'calibrating', 'armed', 'running'].includes(state);
   const canChoose = ['idle', 'checking'].includes(state);
   $('audio-input').disabled = $('refresh-inputs').disabled = $('check-input').disabled = $('input-boost').disabled = !canChoose;

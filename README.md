@@ -137,3 +137,5 @@ To remove only this app’s route:
 ```sh
 sudo tailscale serve --https=443 --set-path=/guitar off
 ```
+
+The chord-change page includes 25 common pairs in the Common changes selector. Pick for me selects a random pair other than the current one. Custom chord selection remains available; pair choices are locked during a session and count review.

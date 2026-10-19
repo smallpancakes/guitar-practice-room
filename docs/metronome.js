@@ -60,10 +60,19 @@ $('tempo-plus').addEventListener('click', () => setTempo(settings.bpm + 1));
 $('bpm').addEventListener('change', () => setTempo($('bpm').value));
 $('bpm').addEventListener('keydown', event => { if (event.key === 'Enter') { setTempo($('bpm').value); $('bpm').blur(); } });
 $('tempo-slider').addEventListener('input', () => setTempo($('tempo-slider').value));
-$('tap-tempo').addEventListener('click', () => {
+function recordTap() {
   const bpm = tapTempo.tap(performance.now());
   $('tap-help').textContent = bpm === null ? t('Tap again to set tempo') : t`Tempo: ${bpm} BPM`;
   if (bpm !== null) setTempo(bpm);
+}
+// Time the press, not the release: holding or sliding off must not lose a beat.
+$('tap-tempo').addEventListener('pointerdown', event => {
+  if (event.button === 0 && event.isPrimary) recordTap();
+});
+$('tap-tempo').addEventListener('click', event => {
+  // Keyboard and assistive activation have no pointer press. Pointer clicks
+  // already counted above must not add a second tap on release.
+  if (event.detail === 0) recordTap();
 });
 $('beats-per-bar').value = settings.beats;
 $('beats-per-bar').addEventListener('change', () => {
