@@ -199,7 +199,7 @@ kbd { font-size: 11px; font-family: inherit; border: 1px solid #ffffff65; border
 .tempo-controls .step { width: 48px; flex-shrink: 0; }
 .tempo-value { text-align: center; min-width: 0; }
 .tempo-value label { display: block; color: var(--muted); font-size: 13px; }
-.tempo-value input { font: 500 80px/1.1 'Fredoka', sans-serif; font-variant-numeric: tabular-nums; color: var(--primary); width: 190px; max-width: 100%; text-align: center; background: transparent; border: 0; border-radius: 12px; appearance: textfield; }
+.tempo-value input { font: 500 80px/1.1 'Fredoka', sans-serif; font-variant-numeric: tabular-nums; color: var(--primary); width: 190px; max-width: 100%; padding: 0; text-align: center; background: transparent; border: 0; border-radius: 12px; appearance: textfield; }
 .tempo-value input::-webkit-inner-spin-button, .tempo-value input::-webkit-outer-spin-button { appearance: none; margin: 0; }
 .tempo-range { max-width: 410px; margin: 0 auto 24px; }
 .tempo-range input { margin-top: 8px; }
@@ -226,7 +226,7 @@ kbd { font-size: 11px; font-family: inherit; border: 1px solid #ffffff65; border
   .tool-nav { margin: 7px 0 16px; gap: 4px; }
   .tool-nav a { padding: 10px 13px; font-size: 13px; }
   .metronome-panel .tempo-controls { gap: 12px; }
-  .tempo-value input { width: 145px; font-size: 72px; }
+  .tempo-value input { width: 145px; font-size: 56px; }
   .beat-stage { margin-left: -20px; margin-right: -20px; padding-left: 12px; padding-right: 12px; }
   .beat-lights { gap: 7px; }
   .beat-light { width: 43px; height: 43px; font-size: 20px; }
@@ -237,7 +237,7 @@ kbd { font-size: 11px; font-family: inherit; border: 1px solid #ffffff65; border
 @media (max-width: 360px) {
   .beat-stage, .metro-settings { margin-left: -16px; margin-right: -16px; }
   .beat-light { width: 36px; height: 36px; }
-  .tempo-value input { width: 120px; }
+  .tempo-value input { width: 120px; font-size: 48px; }
   .meter-settings { flex-wrap: wrap; }
 }
 

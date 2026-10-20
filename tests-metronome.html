@@ -112,6 +112,20 @@ try{
  await test('Unavailable audio shows a recoverable error',async()=>{
   Object.defineProperty(w,'AudioContext',{configurable:true,value:class{constructor(){throw new Error('Audio unavailable')}}});$('metro-toggle').click();await wait(20);assert(!$('metro-error').hidden&&$('metro-error').textContent==='Audio unavailable');assert($('metro-toggle').textContent==='Start metronome');
  });
+ await test('Three-digit BPM fits the input at narrow mobile widths',async()=>{
+  await d.fonts.ready;
+  for(const width of [320,340,375,390]){
+   frame.width=String(width);await wait(30);
+   const input=$('bpm'),style=w.getComputedStyle(input),probe=d.createElement('span');
+   probe.style.cssText=`position:absolute;visibility:hidden;white-space:pre;font-family:${style.fontFamily};font-size:${style.fontSize};font-weight:${style.fontWeight};font-variant-numeric:${style.fontVariantNumeric}`;
+   d.body.append(probe);
+   for(const value of ['80','120','240']){
+    input.value=value;probe.textContent=value;
+    assert(probe.getBoundingClientRect().width<=input.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight),`${value} clipped at ${width}px`);
+   }
+   probe.remove();
+  }
+ });
  await test('Six beat indicators fit at desktop and 340px without overflow',async()=>{
   assert(d.documentElement.scrollWidth<=w.innerWidth);frame.width='340';await wait(30);assert(d.documentElement.scrollWidth<=w.innerWidth,'page overflow');assert($('beat-lights').scrollWidth<=$('beat-lights').clientWidth,'beat row overflow');
  });
