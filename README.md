@@ -152,7 +152,7 @@ In both Level practice and Note hunt, Show open-string notes can replace tuning 
 
 ## Install and practice offline
 
-Open the HTTPS site once and wait for **Offline ready / 可離線使用** at the bottom of the page. All four tools, translations, fonts and guitar recordings are cached, including pages you have not opened yet. Then install through the **Install app** control or the browser menu. In Safari on iPhone/iPad, use **Share → Add to Home Screen**.
+Open the HTTPS site once and wait for **Offline ready / 可離線使用** at the bottom of the page. All four tools, translations, fonts and guitar recordings are cached, including pages you have not opened yet. Use **Install app / 安裝 App** directly below the tool navigation. It opens the native installation prompt when available, or a short inline guide with icons and the offline download status. The control hides in the installed app. In Safari on iPhone/iPad, use **Share → Add to Home Screen**.
 
 The app can launch and navigate offline after setup; microphone practice still requires device permission. Progress remains in browser storage on that device and origin. Installing does not introduce cloud sync. Browser data removal also removes offline files and saved progress; the existing log export remains available.
 

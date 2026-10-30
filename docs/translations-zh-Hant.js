@@ -1,5 +1,15 @@
 // English source messages are the stable catalog keys. Keep chord and note symbols unchanged.
 export default {
+  "Add to your home screen": "加入主畫面",
+  "Open this page in Safari, then:": "用 Safari 開啟這個頁面，再依序點：",
+  "In your browser menu:": "在瀏覽器選單中：",
+  "Share": "分享",
+  "Add to Home Screen": "加入主畫面",
+  "Add": "加入",
+  "Open the browser menu": "開啟瀏覽器選單",
+  "Install app or Add to Home Screen": "安裝 App 或加入主畫面",
+  "Confirm installation": "確認安裝",
+  "Close guide": "關閉說明",
   "Preparing offline…": "正在準備離線使用…",
   "Offline ready": "可離線使用",
   "Offline setup failed": "離線下載未完成",

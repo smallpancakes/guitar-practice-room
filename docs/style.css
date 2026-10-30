@@ -334,6 +334,16 @@ p:empty { display: none; }
 .pair-preset-controls button { flex-shrink: 0; min-height: 44px; padding: 8px 12px; }
 
 .pwa-footer { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; margin-top: 24px; padding: 16px 0; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
-.pwa-footer summary { cursor: pointer; min-height: 44px; padding: 12px 0; }
-.pwa-footer p { max-width: 34ch; line-height: 1.6; }
 .pwa-footer .text-button { min-height: 44px; }
+
+.pwa-install { margin: -4px 0 20px; }
+.pwa-install-button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--primary); border-radius: 12px; background: var(--surface); color: var(--primary); font-size: 14px; font-weight: 700; }
+.pwa-install-button:hover:not(:disabled) { background: var(--tint); }
+.pwa-install svg { width: 22px; height: 22px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.pwa-install-guide { max-width: 480px; margin-top: 12px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.pwa-install-guide h2 { font-size: 20px; margin: 0 0 12px; }
+.pwa-install-guide p { font-size: 14px; line-height: 1.6; }
+.pwa-install-guide ol { margin: 16px 0; padding-left: 24px; }
+.pwa-install-guide li { padding: 8px 0 8px 4px; font-size: 14px; line-height: 1.5; }
+.pwa-install-guide li svg { display: inline-block; vertical-align: middle; margin-right: 10px; }
+.pwa-guide-status { color: var(--muted); }

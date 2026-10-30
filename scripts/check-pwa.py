@@ -94,6 +94,7 @@ with TemporaryDirectory(prefix='guitar-pwa-') as directory:
             target = json.load(urlopen(Request(f'http://127.0.0.1:{port}/json/new?about:blank', method='PUT')))
             client = CDP(target['webSocketDebuggerUrl'])
             client.call('Network.enable')
+            client.call('Page.enable')
             return target, client
         def offline(client, value):
             client.call('Network.emulateNetworkConditions', {'offline': value, 'latency': 0, 'downloadThroughput': -1, 'uploadThroughput': -1})
@@ -106,6 +107,35 @@ with TemporaryDirectory(prefix='guitar-pwa-') as directory:
             manifest = client.js("fetch('manifest.webmanifest').then(r=>r.json())")
             assert manifest['scope'] == './' and manifest['display'] == 'standalone'
             assert client.js("Promise.all(['assets/icon-192.png','assets/icon-512.png'].map(src=>new Promise(resolve=>{const i=new Image();i.onload=()=>resolve(i.naturalWidth);i.src=src})))") == [192, 512]
+            assert client.js("!document.querySelector('.pwa-install').hidden && document.querySelector('.tool-nav').nextElementSibling.classList.contains('pwa-install')"), 'install entry is visible below navigation'
+            client.js("document.querySelector('.pwa-install-button').click()")
+            assert client.js("!document.getElementById('install-guide').hidden && document.querySelector('.pwa-guide-status').textContent==='可離線使用'"), 'guide opens with offline readiness'
+            client.js("document.querySelector('#install-guide button').click()")
+            assert client.js("document.getElementById('install-guide').hidden"), 'guide closes'
+            client.js("window.installCalls=0;const e=new Event('beforeinstallprompt',{cancelable:true});e.prompt=async()=>{window.installCalls++};e.userChoice=Promise.resolve({outcome:'dismissed'});window.dispatchEvent(e);document.querySelector('.pwa-install-button').click()")
+            client.until("window.installCalls===1 && !document.querySelector('.pwa-install-button').disabled && !document.getElementById('install-guide').hidden")
+            client.js("window.dispatchEvent(new Event('appinstalled'))")
+            assert client.js("document.querySelector('.pwa-install').hidden"), 'installed app hides entry'
+            script=client.call('Page.addScriptToEvaluateOnNewDocument', {'source':"Object.defineProperty(navigator,'standalone',{value:true})"})
+            client.call('Page.navigate', {'url':url+'?lang=zh-Hant'})
+            client.until("document.querySelector('.pwa-install')?.hidden")
+            client.call('Page.removeScriptToEvaluateOnNewDocument', {'identifier':script['identifier']})
+            client.call('Page.navigate', {'url':url+'?lang=zh-Hant'})
+            client.until("document.querySelector('.pwa-install') && !document.querySelector('.pwa-install').hidden")
+            if scope == 'guitar':
+                client.call('Network.setUserAgentOverride', {'userAgent':'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'})
+                client.call('Emulation.setDeviceMetricsOverride', {'width':390,'height':844,'deviceScaleFactor':1,'mobile':True})
+                client.call('Page.navigate', {'url':url+'?lang=zh-Hant'})
+                client.until("!!document.querySelector('.pwa-install-button')")
+                client.js("document.querySelector('.pwa-install-button').click()")
+                assert client.js("document.querySelector('#install-guide ol').textContent==='分享加入主畫面加入'"), 'iPhone steps'
+                assert client.js("document.documentElement.scrollWidth<=window.innerWidth"), 'mobile guide fits'
+                client.js("document.querySelector('.pwa-install').scrollIntoView({block:'start'})")
+                shot=client.call('Page.captureScreenshot', {'format':'png'})
+                Path('/tmp/guitar-install-mobile.png').write_bytes(base64.b64decode(shot['data']))
+                client.call('Network.setUserAgentOverride', {'userAgent':'Mozilla/5.0 Chrome/130.0.0.0 Safari/537.36'})
+                client.call('Emulation.clearDeviceMetricsOverride')
+            print(f'PASS {scope}: prominent install entry, fallback guide, native prompt and standalone visibility')
             print(f'PASS {scope}: install, manifest, icons and full offline readiness')
             client.js("localStorage.setItem('pwa-progress-check','preserved')")
             offline(client, True)
