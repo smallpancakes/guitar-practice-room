@@ -1,5 +1,12 @@
 // English source messages are the stable catalog keys. Keep chord and note symbols unchanged.
 export default {
+  "Preparing offline…": "正在準備離線使用…",
+  "Offline ready": "可離線使用",
+  "Offline setup failed": "離線下載未完成",
+  "Retry": "重試",
+  "Install app": "安裝 App",
+  "In Safari, tap Share, then Add to Home Screen.": "在 Safari 點「分享」，再選「加入主畫面」。",
+  "Use your browser’s Install app or Add to Home Screen option.": "在瀏覽器選單選「安裝 App」或「加入主畫面」。",
   "String {0}": "第 {0} 弦",
   "String {0} · 0: open": "第 {0} 弦 · 0 是空弦",
   "Fret on string {0}": "第 {0} 弦的琴格",

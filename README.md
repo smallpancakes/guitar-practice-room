@@ -149,3 +149,13 @@ Fretboard playback uses locally hosted acoustic guitar recordings from the Iowa 
 Note hunt defaults to natural notes. Include sharps & flats adds all 12 pitches to both the note picker and Next note. This preference is remembered in the browser.
 
 In both Level practice and Note hunt, Show open-string notes can replace tuning labels with string numbers 1–6. The preference is saved, applies to accessible labels too, and does not reset the current answers.
+
+## Install and practice offline
+
+Open the HTTPS site once and wait for **Offline ready / 可離線使用** at the bottom of the page. All four tools, translations, fonts and guitar recordings are cached, including pages you have not opened yet. Then install through the **Install app** control or the browser menu. In Safari on iPhone/iPad, use **Share → Add to Home Screen**.
+
+The app can launch and navigate offline after setup; microphone practice still requires device permission. Progress remains in browser storage on that device and origin. Installing does not introduce cloud sync. Browser data removal also removes offline files and saved progress; the existing log export remains available.
+
+A new version downloads on a subsequent online visit and waits until all app tabs/windows close before activating. It does not reload an active exercise. Cache names are isolated by deployment scope, so the app can live under `/guitar/` or `/guitar-practice-room/` without controlling another app at `/`.
+
+Both packaging scripts regenerate `sw.js` with a content hash and complete asset list from `scripts/pwa.py` and `scripts/sw-template.js`; commit the generated worker and `docs/` with releases. Do not hand-edit the generated worker. Run `python3 scripts/build-pages.py`, `python3 scripts/check-browser.py`, and `python3 scripts/check-pwa.py` to verify a release. The PWA check disables Chromium's network, exercises all tools and recorded audio, and verifies installation and deferred updates at both deployment paths.
