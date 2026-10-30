@@ -7,9 +7,9 @@
   <script src="palette.js"></script><link rel="stylesheet" href="palettes.css">
   <title>smallpancakes’s guitar practice room · Fretboard</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="stylesheet" href="style.css?v=9"><link rel="stylesheet" href="fretboard.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9"><link rel="stylesheet" href="fretboard.css?v=14">
   <link rel="stylesheet" href="staff-answer.css?v=4">
-  <script type="module" src="fretboard.js?v=8"></script>
+  <script type="module" src="fretboard.js?v=18"></script>
 </head>
 <body>
   <header class="site-header"><a class="wordmark" href="./" aria-label="smallpancakes’s guitar practice room home"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 4v20M14 4v20M22 4v20M3 9h22M3 19h22"/><circle cx="14" cy="9" r="3"/><circle cx="6" cy="19" r="3"/></svg><span class="wordmark-text"><span class="wordmark-owner">smallpancakes’s</span><span>guitar practice room<span class="wordmark-dot">.</span></span></span></a><div class="header-actions"><label class="palette-control language-control" for="language">Language<select id="language" translate="no"><option value="en" lang="en">English</option><option value="zh-Hant" lang="zh-Hant">繁體中文</option></select></label><label class="palette-control" for="palette">Palette<select id="palette"><option value="pancake">Pancake</option><option value="pastel">Original pastel</option></select></label></div></header>
@@ -18,6 +18,7 @@
     <section class="intro"><h1>Fretboard</h1></section>
     <div class="workspace">
       <section class="practice fret-panel" aria-label="Fretboard practice">
+        <div class="exercise-switch" role="group" aria-label="Practice type"><button id="exercise-levels" type="button" aria-pressed="true">Level practice</button><button id="exercise-six" type="button" aria-pressed="false">Note hunt</button></div>
         <div class="practice-top"><h2 id="stage-title">Explore</h2><span class="duration" id="round-count"></span></div>
         <div class="level-summary">
           <p id="current-level"></p>
@@ -26,10 +27,11 @@
         </div>
         <div class="fret-settings">
           <label for="scope">Practice level<select id="scope"></select></label>
-          <label for="practice-mode">Answer with<select id="practice-mode"><option value="screen">Note names · C D E</option><option value="staff">Place a note on the staff</option><option value="guitar">My guitar · self-check</option></select></label>
+          <label for="practice-mode">Answer with<select id="practice-mode"><option value="screen" selected>Note names · C D E</option><option value="staff">Place a note on the staff</option><option value="guitar">My guitar · self-check</option></select></label>
+          <div id="six-note-control" hidden><label for="six-note">Find note<select id="six-note"></select></label><label class="six-accidentals"><input id="six-accidentals" type="checkbox">Include sharps &amp; flats</label></div>
         </div>
         <div class="note-prompt"><h3 id="prompt">Start with C, D & E</h3><p id="prompt-help">Tap a note to hear it.</p></div>
-        <p class="board-caption" id="board-caption">B is the second-thinnest string. 0 means play it open.</p>
+        <div class="board-toolbar"><p class="board-caption" id="board-caption">B is the second-thinnest string. 0 means play it open.</p><div class="board-tools"><label id="open-notes-control" class="open-notes-control" hidden><input id="six-open-notes" type="checkbox" checked>Show open-string notes</label><button id="fret-sound" class="secondary audio-button" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4Z"/><path class="sound-waves" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="sound-cross" d="m17 9 5 6m0-6-5 6"/></svg><span id="fret-sound-label">Sound on</span></button></div></div>
         <div id="board-scroll" class="board-scroll" tabindex="0" role="region" aria-label="Fretboard; scroll sideways for more frets"><div id="fretboard" class="fretboard"></div></div>
         <form id="typed-answer-form" class="typed-answer" hidden novalidate>
           <label id="typed-answer-label" for="typed-answer">Fret number</label>
@@ -52,6 +54,7 @@
           <button id="explore" class="secondary" hidden>Back to explore</button>
         </div>
         <details class="help-details"><summary>Keyboard controls</summary><p id="keyboard-help" class="small-copy">Keyboard: Tab to a control, then Enter to use it. Arrow keys move between fret positions and note choices.</p></details>
+        <p class="small-copy"><a href="assets/guitar/CREDITS.txt">Guitar samples</a> · Iowa / nbrosowsky · CC BY 3.0</p>
         <p id="audio-error" class="error" role="alert" hidden></p>
         <noscript><p>This exercise needs JavaScript. Enable it, then reload this page.</p></noscript>
       </section>

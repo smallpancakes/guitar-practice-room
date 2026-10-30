@@ -1,8 +1,22 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><title>Fretboard checks</title><body><pre id="results">Running…</pre><iframe id="app" title="Fretboard under test" width="1100" height="1300"></iframe><script type="module">
+import { guitarSample, guitarBuffer } from './guitar-audio.js';
 import {position, locations, choose, readProgress, LEVELS, LEVEL_KEY, readLevels, levelProgress, recordLevel, finishLevel, levelPool} from './fretboard-engine.js';
 const results=[];
 function assert(v,m='assertion failed'){if(!v)throw Error(m)}
 async function test(name,run){try{await run();results.push('PASS '+name)}catch(e){results.push('FAIL '+name+': '+e.message)}}
+await test('Bundled guitar samples decode and render audible audio across the full fretboard',async()=>{
+ const keepAlive=setInterval(()=>{},1);
+ try {
+ const Audio=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+ await Promise.all([40,45,50,55,59,64,69,74,76].map(async midi=>{
+  const context=new Audio(1,44100,44100),sample=guitarSample(midi),buffer=await guitarBuffer(context,sample.url);
+  assert(buffer.duration>.5,'real recording has decay');
+  const source=context.createBufferSource();source.buffer=buffer;source.playbackRate.value=sample.rate;source.connect(context.destination);source.start();
+  const rendered=await context.startRendering();assert(rendered.getChannelData(0).some(v=>Math.abs(v)>.01),'sample is audible');
+ }));
+ for(let midi=40;midi<=76;midi++)assert(Math.abs(12*Math.log2(guitarSample(midi).rate))<=2.01,'transposition stays within two semitones');
+ } finally {clearInterval(keepAlive)}
+});
 await test('Standard tuning and octave repeat, including B–C and E–F',()=>{
  assert(position(1,1).name==='C');assert(position(1,3).name==='D');assert(position(1,5).name==='E');
  assert(position(5,0).midi===40);assert(position(0,0).midi===64);
@@ -123,7 +137,7 @@ try{
  });
  await test('Guitar mode requires self-assessment after revealing',()=>{
   click('explore');$('practice-mode').value='guitar';click('start');
-  assert([...d.querySelectorAll('.fret')].every(b=>b.disabled));click('reveal');assert(!$('remembered').hidden&&$('next').hidden);
+  d.querySelector('.fret').click();assert(!$('reveal').hidden&&$('remembered').hidden&&$('next').hidden,'hearing a note does not self-assess');click('reveal');assert(!$('remembered').hidden&&$('next').hidden);
   click('remembered');assert(!$('next').hidden&&$('remembered').hidden);click('next');click('reveal');click('missed');assert(!$('next').hidden);
  });
  await test('Scope changes and phone widths retain controls without page overflow',async()=>{
@@ -155,6 +169,116 @@ try{
    get('typed-answer').value=String(fret);get('typed-answer-form').requestSubmit();
    assert(get('feedback').textContent.startsWith('Yes!'));
   }
+ });
+ await test('Six-string hunt accepts every pitch on six distinct strings without changing level progress',async()=>{
+  await load();const w=frame.contentWindow,d=w.document,$=id=>d.getElementById(id);
+  const before=localStorage.getItem(LEVEL_KEY),savedScope=$('scope').value;
+  $('exercise-six').click();
+  assert($('exercise-six').getAttribute('aria-pressed')==='true'&&$('practice-mode').closest('label').hidden,'direct mode switch hides answer method');
+  assert($('six-note').value==='4'&&d.querySelectorAll('.fret').length===78,'defaults to E across 0–12');
+  assert([...d.querySelectorAll('.fret span')].every(n=>!n.textContent),'answers initially hidden');
+  assert($('six-note').options.length===7&&!$('six-accidentals').checked,'natural notes by default');
+  $('six-accidentals').click();assert($('six-note').options.length===12,'optional chromatic notes');
+  for(let pitch=0;pitch<12;pitch++){
+   $('six-note').value=String(pitch);$('six-note').dispatchEvent(new w.Event('change'));
+   const wrong=Array.from({length:13},(_,f)=>position(0,f)).find(p=>p.midi%12!==pitch);
+   d.querySelector(`[data-position="${wrong.id}"]`).click();
+   assert($('round-count').textContent==='0 / 6 strings'&&$('next').hidden,'wrong answer keeps question open');
+   for(let string=0;string<6;string++){
+    const choices=Array.from({length:13},(_,f)=>position(string,f)).filter(p=>p.midi%12===pitch);
+    const picked=choices.at(-1);d.querySelector(`[data-position="${picked.id}"]`).click();
+    assert($('round-count').textContent===`${string+1} / 6 strings`,'one count per distinct string');
+    for(const p of choices)d.querySelector(`[data-position="${p.id}"]`).click();
+    assert($('round-count').textContent===`${string+1} / 6 strings`,'duplicate octave cannot count twice');
+   }
+   assert(!$('next').hidden&&d.querySelectorAll('.fret.correct').length===6,'all six retained');
+   $('next').click();assert($('six-note').value!==String(pitch)&&$('round-count').textContent==='0 / 6 strings','next note resets and differs');
+  }
+  $('six-note').value='1';$('six-note').dispatchEvent(new w.Event('change'));
+  $('six-accidentals').click();assert($('six-note').value==='4'&&$('round-count').textContent==='0 / 6 strings','excluded note resets to E');
+  const natural=[0,2,4,5,7,9,11];
+  for(const pitch of natural){
+   $('six-note').value=String(pitch);$('six-note').dispatchEvent(new w.Event('change'));
+   for(let string=0;string<6;string++){
+    const p=Array.from({length:13},(_,f)=>position(string,f)).find(p=>p.midi%12===pitch);
+    d.querySelector(`[data-position="${p.id}"]`).click();
+   }
+   $('next').click();assert(natural.includes(Number($('six-note').value))&&Number($('six-note').value)!==pitch,'next uses only enabled notes');
+  }
+  frame.width='340';await new Promise(r=>setTimeout(r,30));assert(d.documentElement.scrollWidth<=w.innerWidth,'mobile page fits');
+  assert($('board-scroll').scrollWidth>$('board-scroll').clientWidth,'full neck scrolls inside board');
+  $('exercise-levels').click();
+  assert($('exercise-levels').getAttribute('aria-pressed')==='true'&&!$('practice-mode').closest('label').hidden,'return restores answer method');
+  assert($('scope').value===savedScope&&!$('scope').closest('label').hidden,'restores selected level');
+  assert(localStorage.getItem(LEVEL_KEY)===before,'does not alter level progress');
+ });
+ await test('Open-string labels can be hidden without giving away pitches or resetting the hunt',async()=>{
+  const preference='practice-room.fretboard.open-notes.v1',previous=localStorage.getItem(preference);
+  try {
+   localStorage.removeItem(preference);await load();
+   let d=frame.contentDocument,$=id=>d.getElementById(id);
+   $('exercise-six').click();assert($('six-open-notes').checked,'labels initially on');
+   $('six-open-notes').click();
+   assert([...d.querySelectorAll('.string-label')].map(n=>n.textContent).join(',')==='1,2,3,4,5,6','numbered strings');
+   assert(d.querySelector('[data-position="0:0"]').getAttribute('aria-label')==='String 1, open','accessible label also hides pitch');
+   d.querySelector('[data-position="0:0"]').click();
+   $('six-open-notes').click();assert($('round-count').textContent==='1 / 6 strings'&&d.querySelector('.fret.correct'),'changing labels preserves answers');
+   assert(d.querySelector('.string-label').textContent==='high E','restores open note names');
+   $('six-open-notes').click();await load();d=frame.contentDocument;$=id=>d.getElementById(id);$('exercise-six').click();
+   assert(!$('six-open-notes').checked&&d.querySelector('.string-label').textContent==='1','choice survives reload');
+   $('exercise-levels').click();assert(/^\d$/.test(d.querySelector('.string-label').textContent)&&!$('open-notes-control').hidden,'levels share the toggle');
+   $('scope').value='starter';$('scope').dispatchEvent(new frame.contentWindow.Event('change'));$('start').click();
+   assert($('prompt').textContent.includes('on string 2')&&$('typed-answer-label').textContent==='Fret on string 2','question uses numbered string');
+   const question=$('round-count').textContent,progress=$('level-meter').value;
+   $('typed-answer').value='3';$('six-open-notes').click();
+   assert($('prompt').textContent.includes('B string')&&$('typed-answer').value==='3','toggle updates prompt without clearing input');
+   assert($('round-count').textContent===question&&$('level-meter').value===progress,'toggle keeps current question and progress');
+   $('six-open-notes').click();$('reveal').click();$('next').click();
+   assert($('prompt-help').textContent.startsWith('String 2,'),'naming question uses numbered string');
+  } finally {if(previous===null)localStorage.removeItem(preference);else localStorage.setItem(preference,previous)}
+ });
+ await test('Fretboard sound plays clicked pitches, replays without grading, and respects mute',async()=>{
+  const soundKey='practice-room.fretboard.sound.v1',backupSound=localStorage.getItem(soundKey);
+  try {
+   localStorage.removeItem(soundKey);await load();
+   let w=frame.contentWindow,d=w.document,$=id=>d.getElementById(id),notes=[],resume;
+   class Audio {
+    state='running';currentTime=0;destination={};
+    resume(){return resume?new Promise(r=>resume=r):Promise.resolve()}
+    close(){this.state='closed';return Promise.resolve()}
+    createGain(){return {gain:{setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}}}
+    decodeAudioData(){return Promise.resolve({duration:3})}
+    createBufferSource(){const n={playbackRate:{},connect(){},disconnect(){},start(){notes.push(n)},stop(at){if(at===undefined)n.stopped=true}};return n}
+   }
+   Object.defineProperty(w,'AudioContext',{value:Audio,configurable:true});
+   w.fetch=async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)});
+   const tick=()=>new Promise(r=>setTimeout(r,0));
+   $('exercise-six').click();d.querySelector('[data-position="0:0"]').click();await tick();
+   assert(notes.at(-1).playbackRate.value===1&&guitarSample(64).url.endsWith('/E4.mp3'),'high E plays at correct pitch');
+   d.querySelector('[data-position="0:0"]').click();await tick();
+   assert(notes.length===2&&$('round-count').textContent==='1 / 6 strings','replay does not count again');
+   d.querySelector('[data-position="1:0"]').click();await tick();
+   assert(notes.at(-1).playbackRate.value===1&&guitarSample(59).url.endsWith('/B3.mp3'),'wrong answer plays clicked B, not target E');
+   $('fret-sound').click();assert(notes.every(n=>n.stopped),'mute stops ringing notes');
+   d.querySelector('[data-position="1:5"]').click();await tick();assert(notes.length===3&&$('round-count').textContent==='2 / 6 strings','mute retains grading');
+   await load();w=frame.contentWindow;d=w.document;$=id=>d.getElementById(id);
+   assert($('fret-sound').getAttribute('aria-pressed')==='false','mute survives reload');
+   Object.defineProperty(w,'AudioContext',{value:Audio,configurable:true});
+   w.fetch=async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)});
+   $('fret-sound').click();$('scope').value='starter';$('scope').dispatchEvent(new w.Event('change'));$('start').click();
+   d.querySelector('[data-position="1:1"]').click();await tick();assert(notes.length===4,'level quiz taps play');
+   const feedback=$('feedback').textContent;d.querySelector('[data-position="1:3"]').click();await tick();assert(notes.length===5&&$('feedback').textContent===feedback,'replay does not regrade');
+   $('next').click();assert(!d.getElementById('play-question'),'no extra playback control');
+   const targetId=d.querySelector('.fret.target').dataset.position.split(':').map(Number),target=position(...targetId),sample=guitarSample(target.midi);
+   $('typed-answer').value='invalid';$('typed-answer-form').requestSubmit();await tick();assert(notes.length===5,'invalid input does not play');
+   $('typed-answer').value=target.name;$('typed-answer-form').requestSubmit();await tick();
+   assert(notes.length===6&&notes.at(-1).playbackRate.value===sample.rate,'submitting a note name plays the highlighted pitch');
+   assert(!$('next').hidden,'submission grades the answer');
+   $('typed-answer-form').requestSubmit();await tick();assert(notes.length===6,'duplicate submission does not replay');
+   resume=true;d.querySelector('[data-position="1:5"]').click();$('fret-sound').click();resume();resume=false;await tick();assert(notes.length===6,'mute cancels pending audio');
+   $('next').click();$('reveal').click();$('next').click();
+   $('typed-answer').value='C';$('typed-answer-form').requestSubmit();await tick();assert(notes.length===6&&!$('next').hidden,'muted name submission still grades silently');
+  } finally {if(backupSound===null)localStorage.removeItem(soundKey);else localStorage.setItem(soundKey,backupSound)}
  });
 }finally{if(levelBackup===null)localStorage.removeItem(LEVEL_KEY);else localStorage.setItem(LEVEL_KEY,levelBackup);if(backup===null)localStorage.removeItem(key);else localStorage.setItem(key,backup)}
 document.getElementById('results').textContent=results.join('\n');document.title=results.some(r=>r.startsWith('FAIL'))?'FAIL':'PASS';

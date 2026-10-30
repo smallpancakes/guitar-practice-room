@@ -139,3 +139,13 @@ sudo tailscale serve --https=443 --set-path=/guitar off
 ```
 
 The chord-change page includes 25 common pairs in the Common changes selector. Pick for me selects a random pair other than the current one. Custom chord selection remains available; pair choices are locked during a session and count review.
+
+Fretboard → Note hunt (at the top of the practice panel) lets you choose a pitch and find it once on each string across frets 0–12. Either octave counts; mistakes can be retried. This mode does not modify level progress.
+
+Fretboard taps play the selected pitch in explore and practice, including wrong answers. Sound on / Muted above the board controls playback and is remembered in this browser. Replaying a note does not change grading.
+
+Fretboard playback uses locally hosted acoustic guitar recordings from the Iowa / nbrosowsky sample collection (CC BY 3.0). Nearby samples are transposed by at most two semitones across frets 0–12. Attribution is in `assets/guitar/CREDITS.txt`.
+
+Note hunt defaults to natural notes. Include sharps & flats adds all 12 pitches to both the note picker and Next note. This preference is remembered in the browser.
+
+In both Level practice and Note hunt, Show open-string notes can replace tuning labels with string numbers 1–6. The preference is saved, applies to accessible labels too, and does not reset the current answers.

@@ -1,0 +1,10 @@
+Acoustic guitar recordings
+Source: University of Iowa Musical Instrument Samples
+http://theremin.music.uiowa.edu/
+Edited sample collection: nbrosowsky / tonejs-instruments
+https://github.com/nbrosowsky/tonejs-instruments
+https://github.com/nbrosowsky/tonejs-instruments/blob/master/sample-source-info.txt
+License for this sample collection: Creative Commons Attribution 3.0
+https://creativecommons.org/licenses/by/3.0/
+Files E2, A2, D3, G3, B3, E4, A4, D5 are distributed unchanged.
+The application transposes nearby recordings at playback and fades the tail.

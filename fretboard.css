@@ -83,3 +83,31 @@
 
 .level-scroll { max-height: 65vh; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; margin-top: 16px; padding: 0 4px; }
 .level-scroll .tier-section:first-child { border-top: 0; }
+
+.exercise-switch { display: flex; gap: 4px; margin: 0 0 20px; padding: 4px; border-radius: 12px; background: var(--tint); }
+.exercise-switch button { flex: 1; min-width: 0; min-height: 48px; border: 0; border-radius: 9px; padding: 10px 12px; background: transparent; color: var(--ink); font-size: 14px; font-weight: 700; }
+.exercise-switch button:hover { background: var(--surface); }
+.exercise-switch button[aria-pressed="true"] { background: var(--primary); color: white; }
+.exercise-switch button[aria-pressed="true"]:hover { background: var(--primary-hover); }
+
+.board-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.board-toolbar .board-caption { margin: 0; }
+#fret-sound { flex-shrink: 0; min-height: 44px; padding: 8px 12px; color: var(--primary); }
+
+.fret-settings .six-accidentals { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 4px; cursor: pointer; }
+.six-accidentals input { width: 18px; height: 18px; margin: 0; accent-color: var(--primary); }
+
+.audio-button { border: 1px solid var(--primary); background: var(--surface); color: var(--primary); font-weight: 700; min-height: 44px; }
+.audio-button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+#fret-sound[aria-pressed="true"] { background: var(--primary); color: white; }
+#fret-sound[aria-pressed="true"]:hover { background: var(--primary-hover); }
+#fret-sound[aria-pressed="true"] .sound-cross, #fret-sound[aria-pressed="false"] .sound-waves { display: none; }
+
+.board-toolbar { flex-wrap: wrap; }
+.board-tools { display: flex; align-items: center; gap: 12px; margin-left: auto; max-width: 100%; }
+.open-notes-control { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 12px; line-height: 1.4; color: var(--muted); cursor: pointer; }
+.open-notes-control input { width: 18px; height: 18px; flex-shrink: 0; margin: 0; accent-color: var(--primary); }
+@media (max-width: 760px) {
+  .board-toolbar .board-caption { flex-basis: 100%; }
+  .board-tools { width: 100%; justify-content: space-between; }
+}

@@ -1,9 +1,84 @@
+import { guitarSample, guitarBuffer } from './guitar-audio.js';
 import { t, lockLanguage } from './i18n.js';
 import { staffAnswer } from './staff-answer.js?v=2';
 import { STRINGS, NAMES, SCOPES, position, locations, choose, readProgress, LEVELS, TIERS, LEVEL_KEY, readLevels, levelProgress, recordLevel, finishLevel, levelPool } from './fretboard-engine.js?v=2';
 const $ = id => document.getElementById(id);
 let storage;
 try { storage = window.localStorage; } catch { /* Practice works without storage. */ }
+const soundKey = 'practice-room.fretboard.sound.v1';
+let soundOn = true;
+try { soundOn = storage?.getItem(soundKey) !== 'off'; } catch { /* Sound remains available without storage. */ }
+function renderSound() {
+  $('fret-sound-label').textContent = soundOn ? t('Sound on') : t('Muted');
+  $('fret-sound').setAttribute('aria-pressed', String(soundOn));
+  $('fret-sound').setAttribute('aria-label', soundOn ? t('Mute fretboard') : t('Enable fretboard sound'));
+}
+$('fret-sound').addEventListener('click', () => {
+  soundOn = !soundOn;
+  if (!soundOn) { stopAudio(); setVisible('audio-error', false); }
+  try { storage?.setItem(soundKey, soundOn ? 'on' : 'off'); } catch { /* Keep the choice for this visit. */ }
+  renderSound();
+});
+renderSound();
+let sixActive = false;
+const onSix = () => sixActive;
+let sixFound = new Map(), sixWrong;
+const openNotesKey = 'practice-room.fretboard.open-notes.v1';
+try { $('six-open-notes').checked = storage?.getItem(openNotesKey) !== 'off'; } catch { /* Keep the default labels. */ }
+const hideOpenNotes = () => !$('six-open-notes').checked;
+$('six-open-notes').addEventListener('change', () => {
+  try { storage?.setItem(openNotesKey, $('six-open-notes').checked ? 'on' : 'off'); } catch { /* Keep the choice for this visit. */ }
+  render();
+});
+const accidentalsKey = 'practice-room.fretboard.accidentals.v1';
+try { $('six-accidentals').checked = storage?.getItem(accidentalsKey) === 'on'; } catch { /* Default to natural notes. */ }
+function sixPitches() {
+  return NAMES.map((name, pitch) => pitch).filter(pitch => $('six-accidentals').checked || !NAMES[pitch].includes('♯'));
+}
+function updateSixNotes() {
+  const previous = $('six-note').value || '4';
+  $('six-note').replaceChildren(...sixPitches().map(pitch => new Option(NAMES[pitch], pitch)));
+  $('six-note').value = sixPitches().includes(Number(previous)) ? previous : '4';
+  return previous !== $('six-note').value;
+}
+updateSixNotes();
+$('six-accidentals').addEventListener('change', () => {
+  try { storage?.setItem(accidentalsKey, $('six-accidentals').checked ? 'on' : 'off'); } catch { /* Keep the choice for this visit. */ }
+  if (updateSixNotes()) resetSix();
+});
+function resetSix() {
+  sixFound.clear(); sixWrong = undefined; $('feedback').textContent = '';
+  $('board-scroll').scrollLeft = 0; render();
+}
+$('six-note').addEventListener('change', resetSix);
+function renderSix() {
+  lockLanguage(false);
+  $('practice-mode').disabled = false;
+  $('stage-title').textContent = t('Note hunt');
+  $('round-count').textContent = t`${sixFound.size} / 6 strings`;
+  $('prompt').textContent = t`Find ${NAMES[Number($('six-note').value)]} on every string`;
+  $('prompt-help').textContent = t('One position per string · frets 0–12');
+  for (const id of ['start', 'explore', 'reveal', 'remembered', 'missed', 'advance', 'typed-answer-form', 'note-answers', 'staff-answer', 'notation-error']) setVisible(id, false);
+  setVisible('round-count', true); setVisible('next', sixFound.size === 6);
+  $('next').textContent = t('Next note');
+  $('keyboard-help').textContent = t('Keyboard: Tab to a control, then Enter to use it. Arrow keys move between fret positions and note choices.');
+  board(); tabStops();
+}
+function answerSix(p) {
+  if (sixFound.has(p.string)) return;
+  if (p.midi % 12 === Number($('six-note').value)) {
+    sixFound.set(p.string, p.id); sixWrong = undefined;
+    $('feedback').textContent = sixFound.size === 6 ? t('All six found') : t`${sixFound.size} / 6 strings`;
+  } else {
+    sixWrong = p.id; $('feedback').textContent = t`${p.name} · try another fret`;
+  }
+  render();
+  if (sixFound.size === 6) $('next').focus({ preventScroll: true });
+  else {
+    const focus = sixFound.has(p.string) ? [...$('fretboard').querySelectorAll('.fret')].find(b => !sixFound.has(Number(b.dataset.position.split(':')[0]))) : $('fretboard').querySelector(`[data-position="${p.id}"]`);
+    if (focus) { $('fretboard').querySelectorAll('.fret').forEach(b => b.tabIndex = -1); focus.tabIndex = 0; focus.focus({ preventScroll: true }); }
+  }
+}
 const onStaff = () => $('practice-mode').value === 'staff';
 if (new URLSearchParams(location.search).get('answer') === 'staff') $('practice-mode').value = 'staff';
 const modeKey = name => onStaff() ? name.replace('fretboard.', 'fretboard.staff.') : name;
@@ -14,7 +89,7 @@ let target, question = 0, score = 0, answered = false, assisted = false, questio
 let seen = new Set(), audio, voices = new Set();
 let saved = Boolean(storage);
 const key = 'practice-room.fretboard.v1';
-const locationText = p => t`${STRINGS[p.string].name} string, ${p.fret === 0 ? t('open') : t`fret ${p.fret}`}`;
+const locationText = p => hideOpenNotes() ? t`String ${p.string + 1}, ${p.fret === 0 ? t('open') : t`fret ${p.fret}`}` : t`${STRINGS[p.string].name} string, ${p.fret === 0 ? t('open') : t`fret ${p.fret}`}`;
 let notationReady = false;
 const staffInput = staffAnswer($('staff-answer'), n => { if (phase === 'quiz' && !answered && onStaff()) answer(n.midi === target.midi, null, t`written ${n.id}`); });
 const onGuitar = () => $('practice-mode').value === 'guitar';
@@ -87,7 +162,7 @@ function guide() {
     for (const p of pool) {
       const row = document.createElement('div'); row.className = 'guide-row';
       const name = document.createElement('strong'); name.textContent = p.name;
-      const loc = document.createElement('span'); loc.textContent = `${SCOPES[scope].strings.length > 1 ? STRINGS[p.string].name + ' · ' : ''}${p.fret ? t`Fret ${p.fret}` : t('Open string')}`;
+      const loc = document.createElement('span'); loc.textContent = `${SCOPES[scope].strings.length > 1 ? (hideOpenNotes() ? t`String ${p.string + 1}` : STRINGS[p.string].name) + ' · ' : ''}${p.fret ? t`Fret ${p.fret}` : t('Open string')}`;
       row.append(name, loc); $('note-guide').append(row);
     }
   } else if (!testing) {
@@ -97,7 +172,7 @@ function guide() {
   $('progress').textContent = saved ? (hits ? t`${hits} unassisted recalls` : t('Saved in this browser')) : t('Storage is unavailable. Practice works, but progress lasts for this visit only.');
 }
 function board() {
-  const config = SCOPES[scope], board = $('fretboard'); board.replaceChildren();
+  const config = SCOPES[onSix() ? 'full' : scope], board = $('fretboard'); board.replaceChildren();
   board.classList.toggle('short-board', config.max === 5);
   board.style.gridTemplateColumns = `48px repeat(${config.max + 1}, minmax(44px, 1fr))`;
   board.style.minWidth = `${48 + (config.max + 1) * 44}px`;
@@ -115,32 +190,37 @@ function board() {
     board.append(marker);
   }
   for (const string of config.strings) {
-    const label = document.createElement('span'); label.className = 'string-label'; label.textContent = STRINGS[string].name; board.append(label);
+    const label = document.createElement('span'); label.className = 'string-label'; label.textContent = hideOpenNotes() ? String(string + 1) : STRINGS[string].name; board.append(label);
     for (let fret = 0; fret <= config.max; fret++) {
-      const p = position(string, fret), eligible = pool.some(note => note.id === p.id);
+      const p = position(string, fret), eligible = onSix() || pool.some(note => note.id === p.id);
       const b = document.createElement('button'); b.className = `fret${fret === 0 ? ' open' : ''}`; b.dataset.position = p.id;
       b.style.setProperty('--string-width', `${1 + string * .3}px`);
-      const showNames = phase !== 'quiz' || answered;
+      const found = onSix() && sixFound.get(string) === p.id;
+      const showNames = onSix() ? found || sixWrong === p.id : phase !== 'quiz' || answered;
       const marked = phase === 'quiz' && questionType === 'name' && p.id === target.id;
-      b.disabled = phase === 'quiz' ? answered || questionType === 'name' || onGuitar() : !eligible;
+      b.disabled = !onSix() && phase !== 'quiz' && !eligible;
       b.setAttribute('aria-label', `${locationText(p)}${showNames && eligible ? `, ${p.name}` : ''}${marked ? t(', highlighted note') : ''}`);
       if (showNames && eligible) b.classList.add('available');
+      if (found) b.classList.add('correct');
+      if (onSix() && sixWrong === p.id) b.classList.add('wrong');
       if (marked) b.classList.add('target');
       if (phase === 'quiz' && answered && p.id === target.id) b.classList.add('correct');
       const dot = document.createElement('span'); dot.textContent = showNames && eligible ? p.name.split(' / ')[0] : marked ? '?' : '';
       b.append(dot); b.addEventListener('click', () => {
+        void playNotes([p]);
+        if (onSix()) { answerSix(p); return; }
         if (phase === 'quiz') {
+          if (answered || questionType === 'name' || onGuitar()) return;
           const correct = p.id === target.id;
           answer(correct, p);
         }
         else {
           $('feedback').textContent = t`${p.name} · ${locationText(p)}`;
-          playNotes([p]);
         }
       }); board.append(b);
     }
   }
-  $('board-caption').textContent = config.strings.length === 1 ? t`${STRINGS[config.strings[0]].name} string · 0: open` : t('Top: thinnest string · 0: open');
+  $('board-caption').textContent = config.strings.length === 1 ? (hideOpenNotes() ? t`String ${config.strings[0] + 1} · 0: open` : t`${STRINGS[config.strings[0]].name} string · 0: open`) : t('Top: thinnest string · 0: open');
 }
 function nameAnswers() {
   $('note-answers').replaceChildren();
@@ -162,7 +242,7 @@ function typedAnswer() {
   setVisible('typed-answer-form', active);
   if (!active) return;
   const fretQuestion = questionType === 'find';
-  $('typed-answer-label').textContent = fretQuestion ? t`Fret on the ${STRINGS[target.string].name} string` : t('Note name');
+  $('typed-answer-label').textContent = fretQuestion ? (hideOpenNotes() ? t`Fret on string ${target.string + 1}` : t`Fret on the ${STRINGS[target.string].name} string`) : t('Note name');
   $('typed-answer').inputMode = fretQuestion ? 'numeric' : 'text';
   $('typed-answer').placeholder = fretQuestion ? `0–${SCOPES[scope].max}` : t('e.g. C, C# or Db');
   $('typed-answer-help').textContent = fretQuestion ? t`Type 0–${SCOPES[scope].max}, then Enter. The string is already selected by the question.` : t('Type a note, then Enter. Use # for sharp or b for flat; either spelling works.');
@@ -226,6 +306,15 @@ function tabStops() {
   }
 }
 function render() {
+  $('exercise-levels').setAttribute('aria-pressed', String(!onSix()));
+  $('exercise-six').setAttribute('aria-pressed', String(onSix()));
+  $('practice-mode').closest('label').hidden = onSix();
+  document.querySelector('.level-summary').hidden = onSix();
+  document.querySelector('.sidebar').hidden = onSix();
+  $('scope').closest('label').hidden = onSix();
+  setVisible('six-note-control', onSix());
+  setVisible('open-notes-control', true);
+  if (onSix()) { renderSix(); return; }
   lockLanguage(phase === 'quiz');
   $('scope').disabled = phase === 'quiz'; $('practice-mode').disabled = phase === 'quiz';
   setVisible('round-count', phase !== 'learn');
@@ -236,11 +325,21 @@ function render() {
   setVisible('remembered', phase === 'quiz' && answered && onGuitar() && assisted);
   setVisible('missed', phase === 'quiz' && answered && onGuitar() && assisted);
   $('next').textContent = question === 6 ? t('See results') : t('Next question');
+  if (phase === 'quiz') renderQuestionPrompt();
   board(); nameAnswers(); guide(); renderPath(); typedAnswer(); tabStops();
   setVisible('staff-answer', onStaff() && phase === 'quiz');
   if (onStaff() && answered && target) staffInput.reveal(target.midi, assisted);
   $('start').disabled = onStaff() && !notationReady;
   $('keyboard-help').textContent = phase === 'quiz' ? (answered ? t('Press Enter to use the focused button. Tab changes your choice.') : onGuitar() ? t('Play the note, then press Enter to reveal. Tab chooses I knew it or Still learning; Enter confirms.') : onStaff() ? t("Tap the staff or use ↑ / ↓ to place a note. Enter checks it. Tab reaches the accidental selector.") : t('Type your answer, then Enter. After feedback, Enter moves on. Tab reaches Show answer and other controls.')) : t('Keyboard: Tab to a control, then Enter to use it. Arrow keys move between fret positions and note choices.');
+}
+function renderQuestionPrompt() {
+  const sameName = pool.filter(p => p.string === target.string && p.name === target.name);
+  const octave = sameName.length > 1 ? (target.midi === Math.min(...sameName.map(p => p.midi)) ? t('lower') : t('higher')) : '';
+  const requestedNote = octave ? t`the ${octave} ${target.name}` : target.name;
+  $('prompt').textContent = questionType === 'find' ? (hideOpenNotes() ? t`${onGuitar() ? t('Play') : t('Find')} ${requestedNote} on string ${target.string + 1}` : t`${onGuitar() ? t('Play') : t('Find')} ${requestedNote} on the ${STRINGS[target.string].name} string`) : t('What note is highlighted?');
+  $('prompt-help').textContent = onGuitar() ? t`Play the note, say its name, then reveal the location to check yourself.${target.fret === 0 || target.fret === 12 ? t` Use fret ${target.fret === 0 ? t("0 (open)") : '12'}.` : ''}` : questionType === 'find' ? t`Tap its location on the fretboard.${target.fret === 0 || target.fret === 12 ? t` Use fret ${target.fret === 0 ? t("0 (open)") : '12'} for this question.` : ''}` : t`${locationText(target)}. Choose the note name below.`;
+  if (questionType === 'find' && octave) $('prompt-help').textContent = t`This string has two ${target.name} notes in this level, an octave apart. Choose the ${octave} pitch${octave === t('lower') ? t(', nearer the nut') : t(', farther up the neck')}.`;
+  if (onStaff()) { $('prompt').textContent = t('Put this guitar position on the staff'); $('prompt-help').textContent = t`${locationText(target)}. Place its written pitch in guitar treble notation, including the octave.`; }
 }
 function nextQuestion() {
   const previous = target?.id;
@@ -249,13 +348,6 @@ function nextQuestion() {
   if (onStaff()) staffInput.reset();
   $('stage-title').textContent = onGuitar() ? t('Find it on your guitar') : t('Practice');
   $('round-count').textContent = t`${question} of 6`;
-  const sameName = pool.filter(p => p.string === target.string && p.name === target.name);
-  const octave = sameName.length > 1 ? (target.midi === Math.min(...sameName.map(p => p.midi)) ? t('lower') : t('higher')) : '';
-  const requestedNote = octave ? t`the ${octave} ${target.name}` : target.name;
-  $('prompt').textContent = questionType === 'find' ? t`${onGuitar() ? t('Play') : t('Find')} ${requestedNote} on the ${STRINGS[target.string].name} string` : t('What note is highlighted?');
-  $('prompt-help').textContent = onGuitar() ? t`Play the note, say its name, then reveal the location to check yourself.${target.fret === 0 || target.fret === 12 ? t` Use fret ${target.fret === 0 ? t("0 (open)") : '12'}.` : ''}` : questionType === 'find' ? t`Tap its location on the fretboard.${target.fret === 0 || target.fret === 12 ? t` Use fret ${target.fret === 0 ? t("0 (open)") : '12'} for this question.` : ''}` : t`${locationText(target)}. Choose the note name below.`;
-  if (questionType === 'find' && octave) $('prompt-help').textContent = t`This string has two ${target.name} notes in this level, an octave apart. Choose the ${octave} pitch${octave === t('lower') ? t(', nearer the nut') : t(', farther up the neck')}.`;
-  if (onStaff()) { $('prompt').textContent = t('Put this guitar position on the staff'); $('prompt-help').textContent = t`${locationText(target)}. Place its written pitch in guitar treble notation, including the octave.`; }
   $('feedback').textContent = '';
   $('typed-answer').value = ''; $('typed-answer').removeAttribute('aria-invalid'); setVisible('typed-answer-error', false);
   render();
@@ -270,6 +362,7 @@ function record(correct) {
 }
 function answer(correct, picked, name) {
   if (answered) return;
+  if (questionType === 'name') void playNotes([target]);
   answered = true; record(correct);
   $('feedback').textContent = correct ? t`Yes! ${target.name} is on the ${locationText(target)}.` : t`${picked ? t`${picked.name} is at ${locationText(picked)}.` : name ? t`You chose ${name}.` : t('Keep practicing this one.')} ${target.name} is on the ${locationText(target)}. We’ll revisit notes you miss.`;
   render();
@@ -291,6 +384,13 @@ for (const [id, correct] of [['remembered', true], ['missed', false]]) $(id).add
 });
 $('start').addEventListener('click', () => { if (onStaff() && !notationReady) return; stopAudio(); phase = 'quiz'; question = 0; score = 0; seen.clear(); nextQuestion(); });
 $('next').addEventListener('click', () => {
+  if (onSix()) {
+    if (sixFound.size !== 6) return;
+    const current = Number($('six-note').value);
+    const choices = sixPitches().filter(pitch => pitch !== current);
+    $('six-note').value = choices[Math.floor(Math.random() * choices.length)];
+    resetSix(); $('fretboard').querySelector('.fret').focus({ preventScroll: true }); return;
+  }
   if (!answered || (onGuitar() && assisted)) return;
   if (question < 6) { nextQuestion(); }
   else {
@@ -317,7 +417,14 @@ function explore() {
   render();
 }
 $('explore').addEventListener('click', explore);
-$('practice-mode').addEventListener('change', () => { path = readLevels(modeStorage); history = readProgress(modeStorage); scope = path.selected; pool = locations(scope); $('scope').value = scope; openTiers.add(LEVELS.find(l => l.id === scope).tier); setVisible('level-celebration', false); explore(); });
+for (const [id, six] of [['exercise-levels', false], ['exercise-six', true]]) {
+  $(id).addEventListener('click', () => {
+    if (sixActive === six) return;
+    sixActive = six; sixFound.clear(); sixWrong = undefined;
+    setVisible('level-celebration', false); explore();
+  });
+}
+$('practice-mode').addEventListener('change', () => { sixFound.clear(); sixWrong = undefined; path = readLevels(modeStorage); history = readProgress(modeStorage); scope = path.selected; pool = locations(scope); $('scope').value = scope; openTiers.add(LEVELS.find(l => l.id === scope).tier); setVisible('level-celebration', false); explore(); });
 $('scope').addEventListener('change', () => selectLevel($('scope').value));
 function stopAudio() {
   audioGeneration++;
@@ -326,24 +433,33 @@ function stopAudio() {
 }
 let audioGeneration = 0;
 async function playNotes(notes) {
+  if (!soundOn) return;
   stopAudio(); const generation = ++audioGeneration;
   try {
     const Audio = window.AudioContext || window.webkitAudioContext;
     if (!audio || audio.state === 'closed') audio = new Audio();
     await audio.resume();
-    if (generation !== audioGeneration || document.hidden) return;
+    if (generation !== audioGeneration || !soundOn || document.hidden) return;
     setVisible('audio-error', false);
-    const start = audio.currentTime + .03;
-    notes.forEach((note, index) => {
-      if (!note) return;
-      const oscillator = audio.createOscillator(), envelope = audio.createGain(), at = start + index * .5;
-      oscillator.type = 'triangle'; oscillator.frequency.value = 440 * 2 ** ((note.midi - 69) / 12);
-      envelope.gain.setValueAtTime(0, at); envelope.gain.linearRampToValueAtTime(.16, at + .015); envelope.gain.exponentialRampToValueAtTime(.001, at + .42);
-      oscillator.connect(envelope); envelope.connect(audio.destination); voices.add(oscillator);
-      oscillator.onended = () => { voices.delete(oscillator); oscillator.disconnect(); envelope.disconnect(); };
-      oscillator.start(at); oscillator.stop(at + .45);
+    const context = audio;
+    const loaded = await Promise.all(notes.filter(Boolean).map(async note => {
+      const sample = guitarSample(note.midi);
+      return { ...sample, buffer: await guitarBuffer(context, sample.url) };
+    }));
+    if (generation !== audioGeneration || !soundOn || document.hidden || context !== audio) return;
+    const start = context.currentTime + .01;
+    loaded.forEach(({ buffer, rate }, index) => {
+      const source = context.createBufferSource(), envelope = context.createGain(), at = start + index * .5;
+      source.buffer = buffer; source.playbackRate.value = rate;
+      const duration = Math.min(buffer.duration / rate, 4);
+      envelope.gain.setValueAtTime(.7, at);
+      envelope.gain.setValueAtTime(.7, at + Math.max(0, duration - .12));
+      envelope.gain.linearRampToValueAtTime(0, at + duration);
+      source.connect(envelope); envelope.connect(context.destination); voices.add(source);
+      source.onended = () => { voices.delete(source); source.disconnect(); envelope.disconnect(); };
+      source.start(at); source.stop(at + duration);
     });
-  } catch { $('audio-error').textContent = t('Sound could not start in this browser. You can keep practicing visually or play the notes on your guitar.'); setVisible('audio-error', true); }
+  } catch { if (generation !== audioGeneration || !soundOn) return; $('audio-error').textContent = t('Sound could not start in this browser. You can keep practicing visually or play the notes on your guitar.'); setVisible('audio-error', true); }
 }
 function releaseAudio() { audioGeneration++; stopAudio(); if (audio && audio.state !== 'closed') audio.close().catch(() => {}); audio = undefined; }
 document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAudio(); });

@@ -29,7 +29,7 @@ try:
         for page in ('tests.html', 'tests-audio.html', 'tests-ui.html', 'tests-metronome.html', 'tests-input.html', 'tests-fretboard.html', 'tests-staff.html', 'tests-staff-answer.html', 'tests-palette.html', 'tests-i18n.html'):
             result = subprocess.run([
                 browser, '--headless', '--no-sandbox', '--disable-gpu',
-                f'--user-data-dir={profile}', '--dump-dom', f'--virtual-time-budget={60000 if page == "tests-audio.html" else 5000}',
+                f'--user-data-dir={profile}', '--dump-dom', f'--virtual-time-budget={60000 if page in ("tests-audio.html", "tests-fretboard.html") else 5000}',
                 f'http://127.0.0.1:{server.server_port}/{page}',
             ], capture_output=True, text=True, timeout=45)
             match = re.search(r'<pre id="results">(.*?)</pre>', result.stdout, re.S)
