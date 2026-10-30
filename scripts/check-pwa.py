@@ -176,6 +176,25 @@ with TemporaryDirectory(prefix='guitar-pwa-') as directory:
             client.until(f"caches.keys().then(keys=>keys.filter(k=>k.startsWith('guitar-offline:{url}:')).length===1 && keys.some(k=>k==='guitar-offline:{url}:test-update'))")
             assert client.js("localStorage.getItem('pwa-progress-check')") == 'preserved'
             print(f'PASS {scope}: update activates after closing and preserves local data')
+            client.call('Page.navigate', {'url':url+'update.html?lang=en'})
+            client.until("!!document.getElementById('refresh-app')")
+            client.js("caches.open('unrelated-app').then(c=>c.put('/unrelated',new Response('keep')))" )
+            client.js(f"caches.open('guitar-offline:{url}:test-update').then(c=>c.put('{url}style.css',new Response('stale-test-css')))")
+            offline(client, True)
+            client.js("document.getElementById('refresh-app').click()")
+            client.until("!document.getElementById('refresh-app').disabled && document.getElementById('refresh-status').textContent.includes('Could not download')")
+            assert client.js(f"caches.open('guitar-offline:{url}:test-update').then(c=>c.match('{url}style.css')).then(r=>r.text())") == 'stale-test-css', 'failed refresh preserves cache'
+            assert client.js("localStorage.getItem('pwa-progress-check')") == 'preserved'
+            offline(client, False)
+            worker.write_text(worker.read_text().replace("PREFIX + 'test-update'", "PREFIX + 'test-refresh'"))
+            client.js("document.getElementById('refresh-app').click()")
+            client.until("location.pathname.endsWith('/') && document.querySelector('.pwa-footer [role=status]')?.textContent === 'Offline ready'")
+            assert client.js("localStorage.getItem('pwa-progress-check')") == 'preserved'
+            assert client.js("caches.open('unrelated-app').then(c=>c.match('/unrelated')).then(r=>r.text())") == 'keep'
+            assert client.js("fetch('style.css').then(r=>r.text())") != 'stale-test-css'
+            assert client.js(f"caches.keys().then(keys=>keys.includes('guitar-offline:{url}:test-refresh'))")
+            print(f'PASS {scope}: refresh recovers stale files, activates latest worker and preserves saved data/unrelated caches; offline failure is safe')
+
             client.sock.close()
             urlopen(f'http://127.0.0.1:{port}/json/close/{target["id"]}').close()
     finally:

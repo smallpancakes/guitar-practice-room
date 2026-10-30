@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parent.parent
 destination = root / '.tailnet-public'
 destination.mkdir(exist_ok=True)
 build_worker(root)
-for name in (*RUNTIME, 'sw.js'):
+for name in (*RUNTIME, 'sw.js', 'update.html', 'refresh.js'):
     copyfile(root / name, destination / name)
 copytree(root / 'assets', destination / 'assets', dirs_exist_ok=True)
 print(f'Prepared browser assets in {destination}')

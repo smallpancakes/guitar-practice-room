@@ -30,7 +30,8 @@ if ('serviceWorker' in navigator && window.isSecureContext && window.top === win
   entry.addEventListener('keydown', event => { if (event.key === 'Escape' && !help.hidden) { showGuide(false); install.focus(); } });
   help.append(title, hint, steps, guideStatus, close); entry.append(install, help);
   document.querySelector('.tool-nav').after(entry);
-  footer.append(status, retry); document.querySelector('main').append(footer);
+  const refresh = document.createElement('a'); refresh.href = './update.html'; refresh.textContent = t('Refresh app'); refresh.className = 'text-button';
+  footer.append(status, retry, refresh); document.querySelector('main').append(footer);
   let deferred, installed = false;
   const display = matchMedia('(display-mode: standalone)');
   const standalone = () => display.matches || navigator.standalone || installed;

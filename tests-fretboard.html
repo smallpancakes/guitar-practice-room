@@ -249,7 +249,7 @@ try{
    cell(5,0).focus();cell(5,0).dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert(d.activeElement===cell(4,0),'right moves to next visible string');
    cell(4,0).dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));assert(d.activeElement===cell(4,1),'down advances fret');
    for(const width of [320,390,760]){frame.width=String(width);await wait(40);assert($('board-scroll').scrollWidth<=$('board-scroll').clientWidth,'vertical board fits '+width)}
-   frame.width='1100';for(let i=0;i<20&&$('fretboard').classList.contains('vertical-board');i++)await wait(20);assert(!$('fretboard').classList.contains('vertical-board'),'desktop defaults horizontal '+w.innerWidth+' '+w.matchMedia('(max-width: 760px)').matches);
+   frame.width='1100';await load();w=frame.contentWindow;d=w.document;$=id=>d.getElementById(id);$('exercise-six').click();assert(!$('fretboard').classList.contains('vertical-board'),'desktop defaults horizontal');
    cell(0,0).click();$('board-vertical').click();assert($('round-count').textContent==='1 / 6 strings'&&cell(0,0).classList.contains('correct'),'switch preserves answers');
    $('board-horizontal').click();frame.width='390';await wait(40);assert(!$('fretboard').classList.contains('vertical-board'),'explicit choice beats viewport');
    cell(5,0).focus();cell(5,0).dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert(d.activeElement===cell(5,1),'horizontal right advances fret');

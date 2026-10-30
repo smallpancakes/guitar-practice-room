@@ -9,7 +9,7 @@ if destination.exists():
     rmtree(destination)
 destination.mkdir()
 build_worker(root)
-for name in (*RUNTIME, 'sw.js'):
+for name in (*RUNTIME, 'sw.js', 'update.html', 'refresh.js'):
     copyfile(root / name, destination / name)
 copytree(root / 'assets', destination / 'assets')
 (destination / '.nojekyll').touch()

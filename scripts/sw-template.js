@@ -34,3 +34,20 @@ self.addEventListener('fetch', event => {
     return await cache.match(url.href) || fetch(event.request);
   })());
 });
+// Only an explicit refresh request activates an update or rebuilds downloaded files.
+self.addEventListener('message', event => {
+  if (event.data?.type === 'ACTIVATE_UPDATE') event.waitUntil(self.skipWaiting());
+  if (event.data?.type !== 'REFRESH_APP') return;
+  event.waitUntil((async () => {
+    const staging = CACHE + ':refresh';
+    try {
+      const fresh = await caches.open(staging);
+      await fresh.addAll([...urls].map(url => new Request(url, { cache: 'reload' })));
+      const current = await caches.open(CACHE);
+      for (const request of await fresh.keys()) await current.put(request, await fresh.match(request));
+      event.ports[0]?.postMessage({ ok: true });
+    } catch {
+      event.ports[0]?.postMessage({ ok: false });
+    } finally { await caches.delete(staging); }
+  })());
+});
