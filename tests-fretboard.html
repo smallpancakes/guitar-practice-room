@@ -143,7 +143,7 @@ try{
  await test('Scope changes and phone widths retain controls without page overflow',async()=>{
   click('explore');$('scope').value='full';$('scope').dispatchEvent(new Event('change'));assert(d.querySelectorAll('.fret').length===78);
   frame.width='360';await wait(100);assert(d.documentElement.scrollWidth<=frame.contentWindow.innerWidth,'page overflow');
-  assert($('board-scroll').scrollWidth>$('board-scroll').clientWidth,'wide fretboard scrolls locally');
+  assert($('fretboard').classList.contains('vertical-board')&&$('board-scroll').scrollWidth<=$('board-scroll').clientWidth,'mobile board fits vertically');
  });
  await test('A completed level exposes next level and persists selection',async()=>{
   click('explore');$('practice-mode').value='screen';$('scope').value='starter';$('scope').dispatchEvent(new Event('change'));
@@ -206,7 +206,7 @@ try{
    $('next').click();assert(natural.includes(Number($('six-note').value))&&Number($('six-note').value)!==pitch,'next uses only enabled notes');
   }
   frame.width='340';await new Promise(r=>setTimeout(r,30));assert(d.documentElement.scrollWidth<=w.innerWidth,'mobile page fits');
-  assert($('board-scroll').scrollWidth>$('board-scroll').clientWidth,'full neck scrolls inside board');
+  assert($('board-scroll').scrollWidth<=$('board-scroll').clientWidth,'full neck fits mobile width');
   $('exercise-levels').click();
   assert($('exercise-levels').getAttribute('aria-pressed')==='true'&&!$('practice-mode').closest('label').hidden,'return restores answer method');
   assert($('scope').value===savedScope&&!$('scope').closest('label').hidden,'restores selected level');
@@ -219,13 +219,13 @@ try{
    let d=frame.contentDocument,$=id=>d.getElementById(id);
    $('exercise-six').click();assert($('six-open-notes').checked,'labels initially on');
    $('six-open-notes').click();
-   assert([...d.querySelectorAll('.string-label')].map(n=>n.textContent).join(',')==='1,2,3,4,5,6','numbered strings');
+   assert([...d.querySelectorAll('.string-label')].map(n=>n.textContent).sort().join(',')==='1,2,3,4,5,6','numbered strings');
    assert(d.querySelector('[data-position="0:0"]').getAttribute('aria-label')==='String 1, open','accessible label also hides pitch');
    d.querySelector('[data-position="0:0"]').click();
    $('six-open-notes').click();assert($('round-count').textContent==='1 / 6 strings'&&d.querySelector('.fret.correct'),'changing labels preserves answers');
-   assert(d.querySelector('.string-label').textContent==='high E','restores open note names');
+   assert([...d.querySelectorAll('.string-label')].some(n=>n.textContent==='high E'),'restores open note names');
    $('six-open-notes').click();await load();d=frame.contentDocument;$=id=>d.getElementById(id);$('exercise-six').click();
-   assert(!$('six-open-notes').checked&&d.querySelector('.string-label').textContent==='1','choice survives reload');
+   assert(!$('six-open-notes').checked&&/^\d$/.test(d.querySelector('.string-label').textContent),'choice survives reload');
    $('exercise-levels').click();assert(/^\d$/.test(d.querySelector('.string-label').textContent)&&!$('open-notes-control').hidden,'levels share the toggle');
    $('scope').value='starter';$('scope').dispatchEvent(new frame.contentWindow.Event('change'));$('start').click();
    assert($('prompt').textContent.includes('on string 2')&&$('typed-answer-label').textContent==='Fret on string 2','question uses numbered string');
@@ -235,6 +235,25 @@ try{
    assert($('round-count').textContent===question&&$('level-meter').value===progress,'toggle keeps current question and progress');
    $('six-open-notes').click();$('reveal').click();$('next').click();
    assert($('prompt-help').textContent.startsWith('String 2,'),'naming question uses numbered string');
+  } finally {if(previous===null)localStorage.removeItem(preference);else localStorage.setItem(preference,previous)}
+ });
+ await test('Orientation follows viewport, preserves answers, maps arrows and remembers explicit choice',async()=>{
+  const preference='practice-room.fretboard.orientation.v1',previous=localStorage.getItem(preference);
+  try {
+   localStorage.removeItem(preference);frame.width='390';await load();
+   let w=frame.contentWindow,d=w.document,$=id=>d.getElementById(id);
+   $('exercise-six').click();assert($('board-vertical').getAttribute('aria-pressed')==='true','phone defaults vertical');
+   const cell=(s,f)=>d.querySelector(`[data-position="${s}:${f}"]`);
+   assert(cell(5,0).getBoundingClientRect().left<cell(0,0).getBoundingClientRect().left,'low E on left');
+   assert(cell(5,12).getBoundingClientRect().top>cell(5,0).getBoundingClientRect().top,'frets run down');
+   cell(5,0).focus();cell(5,0).dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert(d.activeElement===cell(4,0),'right moves to next visible string');
+   cell(4,0).dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));assert(d.activeElement===cell(4,1),'down advances fret');
+   for(const width of [320,390,760]){frame.width=String(width);await wait(40);assert($('board-scroll').scrollWidth<=$('board-scroll').clientWidth,'vertical board fits '+width)}
+   frame.width='1100';for(let i=0;i<20&&$('fretboard').classList.contains('vertical-board');i++)await wait(20);assert(!$('fretboard').classList.contains('vertical-board'),'desktop defaults horizontal '+w.innerWidth+' '+w.matchMedia('(max-width: 760px)').matches);
+   cell(0,0).click();$('board-vertical').click();assert($('round-count').textContent==='1 / 6 strings'&&cell(0,0).classList.contains('correct'),'switch preserves answers');
+   $('board-horizontal').click();frame.width='390';await wait(40);assert(!$('fretboard').classList.contains('vertical-board'),'explicit choice beats viewport');
+   cell(5,0).focus();cell(5,0).dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert(d.activeElement===cell(5,1),'horizontal right advances fret');
+   await load();d=frame.contentDocument;$=id=>d.getElementById(id);assert($('board-horizontal').getAttribute('aria-pressed')==='true','choice survives reload');
   } finally {if(previous===null)localStorage.removeItem(preference);else localStorage.setItem(preference,previous)}
  });
  await test('Fretboard sound plays clicked pitches, replays without grading, and respects mute',async()=>{

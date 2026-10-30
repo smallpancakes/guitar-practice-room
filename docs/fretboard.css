@@ -111,3 +111,16 @@
   .board-toolbar .board-caption { flex-basis: 100%; }
   .board-tools { width: 100%; justify-content: space-between; }
 }
+
+.board-orientation { display: inline-flex; gap: 4px; padding: 4px; margin: 0 0 12px; background: var(--tint); border-radius: 12px; }
+.board-orientation button { min-height: 44px; padding: 8px 14px; border: 0; border-radius: 9px; background: transparent; color: var(--ink); font-size: 14px; font-weight: 700; }
+.board-orientation button:hover { background: var(--surface); }
+.board-orientation button[aria-pressed="true"] { background: var(--primary); color: white; }
+.fretboard.vertical-board { max-width: 420px; margin-inline: auto; }
+.vertical-board .fret { min-width: 0; min-height: 52px; border-right: 0; border-bottom: 1px solid var(--tone-fret-line); padding: 2px; }
+.vertical-board .fret::before { top: 0; bottom: 0; left: 50%; right: auto; width: var(--string-width, 1px); height: auto; }
+.vertical-board .fret.open { border-right: 0; border-bottom: 3px solid var(--ink); }
+.vertical-board .string-label { text-align: center; justify-content: center; padding: 0 2px 8px; font-size: 11px; overflow-wrap: anywhere; }
+.vertical-board .fret-label { display: grid; place-items: center; padding: 0; font-size: 11px; }
+.vertical-board .fret-marker { height: auto; min-height: 52px; background: transparent; }
+.vertical-board .fret span { min-width: 26px; min-height: 30px; }

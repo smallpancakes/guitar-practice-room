@@ -1,5 +1,11 @@
 // English source messages are the stable catalog keys. Keep chord and note symbols unchanged.
 export default {
+  "Left: thickest string. 0: open string. Fret 12: one octave higher.": "最粗的弦在左，0 是空弦，第 12 格高一個八度。",
+  "Fretboard layout": "指板方向",
+  "Vertical": "直向",
+  "Horizontal": "橫向",
+  "Fretboard; frets run from top to bottom": "指板，琴格由上往下排列",
+  "Left: thickest string · 0: open": "最粗的弦在左 · 0 是空弦",
   "Add to your home screen": "加入主畫面",
   "Open this page in Safari, then:": "用 Safari 開啟這個頁面，再依序點：",
   "In your browser menu:": "在瀏覽器選單中：",

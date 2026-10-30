@@ -5,6 +5,23 @@ import { STRINGS, NAMES, SCOPES, position, locations, choose, readProgress, LEVE
 const $ = id => document.getElementById(id);
 let storage;
 try { storage = window.localStorage; } catch { /* Practice works without storage. */ }
+const orientationKey = 'practice-room.fretboard.orientation.v1';
+const narrowBoard = matchMedia('(max-width: 760px)');
+let orientationPreference;
+try { const stored = storage?.getItem(orientationKey); if (['vertical', 'horizontal'].includes(stored)) orientationPreference = stored; } catch { /* Follow viewport size. */ }
+const verticalBoard = () => orientationPreference ? orientationPreference === 'vertical' : narrowBoard.matches;
+function refreshBoardLayout() {
+  const scroll = $('board-scroll');
+  scroll.scrollLeft = 0; board(); tabStops(); if (!onSix()) guide();
+  $('board-vertical').setAttribute('aria-pressed', String(verticalBoard()));
+  $('board-horizontal').setAttribute('aria-pressed', String(!verticalBoard()));
+}
+for (const direction of ['vertical', 'horizontal']) $('board-' + direction).addEventListener('click', () => {
+  orientationPreference = direction;
+  try { storage?.setItem(orientationKey, direction); } catch { /* Keep the choice for this visit. */ }
+  refreshBoardLayout();
+});
+narrowBoard.addEventListener('change', () => { if (!orientationPreference) refreshBoardLayout(); });
 const soundKey = 'practice-room.fretboard.sound.v1';
 let soundOn = true;
 try { soundOn = storage?.getItem(soundKey) !== 'off'; } catch { /* Sound remains available without storage. */ }
@@ -166,21 +183,29 @@ function guide() {
       row.append(name, loc); $('note-guide').append(row);
     }
   } else if (!testing) {
-    const p = document.createElement('p'); p.textContent = t('Top: thinnest string. 0: open string. Fret 12: one octave higher.'); $('note-guide').append(p);
+    const p = document.createElement('p'); p.textContent = verticalBoard() ? t('Left: thickest string. 0: open string. Fret 12: one octave higher.') : t('Top: thinnest string. 0: open string. Fret 12: one octave higher.'); $('note-guide').append(p);
   }
   const hits = pool.reduce((sum, p) => sum + (history[p.id]?.hits || 0), 0);
   $('progress').textContent = saved ? (hits ? t`${hits} unassisted recalls` : t('Saved in this browser')) : t('Storage is unavailable. Practice works, but progress lasts for this visit only.');
 }
 function board() {
   const config = SCOPES[onSix() ? 'full' : scope], board = $('fretboard'); board.replaceChildren();
-  board.classList.toggle('short-board', config.max === 5);
-  board.style.gridTemplateColumns = `48px repeat(${config.max + 1}, minmax(44px, 1fr))`;
-  board.style.minWidth = `${48 + (config.max + 1) * 44}px`;
-  const blank = document.createElement('span'); blank.className = 'fret-label'; blank.textContent = t('Fret'); board.append(blank);
-  for (let fret = 0; fret <= config.max; fret++) { const n = document.createElement('span'); n.className = 'fret-label'; n.textContent = fret; board.append(n); }
-  const markerLabel = document.createElement('span'); markerLabel.className = 'marker-label'; markerLabel.textContent = t('Dots'); board.append(markerLabel);
+  const vertical = verticalBoard();
+  const strings = vertical ? [...config.strings].reverse() : config.strings;
+  board.classList.toggle('short-board', !vertical && config.max === 5);
+  board.classList.toggle('vertical-board', vertical);
+  board.style.gridTemplateColumns = vertical ? `28px repeat(${strings.length}, minmax(0, 1fr)) 16px` : `48px repeat(${config.max + 1}, minmax(44px, 1fr))`;
+  board.style.minWidth = vertical ? '0' : `${48 + (config.max + 1) * 44}px`;
+  $('board-vertical').setAttribute('aria-pressed', String(vertical));
+  $('board-horizontal').setAttribute('aria-pressed', String(!vertical));
+  $('board-scroll').setAttribute('aria-label', vertical ? t('Fretboard; frets run from top to bottom') : t('Fretboard; scroll sideways for more frets'));
+  function place(element, row, column) { if (vertical) { element.style.gridRow = row; element.style.gridColumn = column; } }
+
+  const blank = document.createElement('span'); blank.className = 'fret-label'; blank.textContent = t('Fret'); place(blank, 1, 1); board.append(blank);
+  for (let fret = 0; fret <= config.max; fret++) { const n = document.createElement('span'); n.className = 'fret-label'; n.textContent = fret; place(n, fret + 2, 1); board.append(n); }
+  const markerLabel = document.createElement('span'); markerLabel.className = 'marker-label'; markerLabel.textContent = vertical ? '' : t('Dots'); place(markerLabel, 1, strings.length + 2); board.append(markerLabel);
   for (let fret = 0; fret <= config.max; fret++) {
-    const marker = document.createElement('span'); marker.className = 'fret-marker';
+    const marker = document.createElement('span'); marker.className = 'fret-marker'; place(marker, fret + 2, strings.length + 2);
     const count = fret === 12 ? 2 : [3, 5, 7, 9].includes(fret) ? 1 : 0;
     if (count) {
       marker.setAttribute('role', 'img');
@@ -189,11 +214,11 @@ function board() {
     } else marker.setAttribute('aria-hidden', 'true');
     board.append(marker);
   }
-  for (const string of config.strings) {
-    const label = document.createElement('span'); label.className = 'string-label'; label.textContent = hideOpenNotes() ? String(string + 1) : STRINGS[string].name; board.append(label);
+  for (const string of strings) {
+    const label = document.createElement('span'); label.className = 'string-label'; label.textContent = hideOpenNotes() ? String(string + 1) : STRINGS[string].name; place(label, 1, strings.indexOf(string) + 2); board.append(label);
     for (let fret = 0; fret <= config.max; fret++) {
       const p = position(string, fret), eligible = onSix() || pool.some(note => note.id === p.id);
-      const b = document.createElement('button'); b.className = `fret${fret === 0 ? ' open' : ''}`; b.dataset.position = p.id;
+      const b = document.createElement('button'); b.className = `fret${fret === 0 ? ' open' : ''}`; b.dataset.position = p.id; place(b, fret + 2, strings.indexOf(string) + 2);
       b.style.setProperty('--string-width', `${1 + string * .3}px`);
       const found = onSix() && sixFound.get(string) === p.id;
       const showNames = onSix() ? found || sixWrong === p.id : phase !== 'quiz' || answered;
@@ -220,7 +245,8 @@ function board() {
       }); board.append(b);
     }
   }
-  $('board-caption').textContent = config.strings.length === 1 ? (hideOpenNotes() ? t`String ${config.strings[0] + 1} · 0: open` : t`${STRINGS[config.strings[0]].name} string · 0: open`) : t('Top: thinnest string · 0: open');
+  if (vertical) [...board.children].sort((a, b) => Number(a.style.gridRow) - Number(b.style.gridRow) || Number(a.style.gridColumn) - Number(b.style.gridColumn)).forEach(el => board.append(el));
+  $('board-caption').textContent = config.strings.length === 1 ? (hideOpenNotes() ? t`String ${config.strings[0] + 1} · 0: open` : t`${STRINGS[config.strings[0]].name} string · 0: open`) : vertical ? t('Left: thickest string · 0: open') : t('Top: thinnest string · 0: open');
 }
 function nameAnswers() {
   $('note-answers').replaceChildren();
@@ -285,8 +311,12 @@ function arrowNavigation(container, selector, spatial) {
     let next;
     if (spatial) {
       const [string, fret] = current.dataset.position.split(':').map(Number);
-      const vertical = ['ArrowUp', 'ArrowDown'].includes(event.key);
-      const line = buttons.filter(b => Number(b.dataset.position.split(':')[vertical ? 1 : 0]) === (vertical ? fret : string));
+      const acrossStrings = verticalBoard() ? ['ArrowLeft', 'ArrowRight'].includes(event.key) : ['ArrowUp', 'ArrowDown'].includes(event.key);
+      const line = buttons.filter(b => Number(b.dataset.position.split(':')[acrossStrings ? 1 : 0]) === (acrossStrings ? fret : string));
+      line.sort((a, b) => {
+        const index = acrossStrings ? 0 : 1;
+        return (Number(a.dataset.position.split(':')[index]) - Number(b.dataset.position.split(':')[index])) * (acrossStrings && verticalBoard() ? -1 : 1);
+      });
       const index = line.indexOf(current);
       const direction = ['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 1;
       next = event.key === 'Home' ? line[0] : event.key === 'End' ? line.at(-1) : line[Math.max(0, Math.min(line.length - 1, index + direction))];
