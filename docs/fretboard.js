@@ -429,7 +429,9 @@ $('next').addEventListener('click', () => {
     const current = Number($('six-note').value);
     const choices = sixPitches().filter(pitch => pitch !== current);
     $('six-note').value = choices[Math.floor(Math.random() * choices.length)];
-    resetSix(); $('fretboard').querySelector('.fret').focus({ preventScroll: true }); return;
+    resetSix(); $('fretboard').querySelector('.fret').focus({ preventScroll: true });
+    $('question-start').scrollIntoView({ block: 'start', inline: 'nearest' });
+    return;
   }
   if (!answered || (onGuitar() && assisted)) return;
   if (question < 6) { nextQuestion(); }
