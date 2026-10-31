@@ -39,7 +39,7 @@
         <div class="board-toolbar"><p class="board-caption" id="board-caption">B is the second-thinnest string. 0 means play it open.</p><div class="board-tools"><label id="open-notes-control" class="open-notes-control" hidden><input id="six-open-notes" type="checkbox" checked>Show open-string notes</label><button id="fret-sound" class="secondary audio-button" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4Z"/><path class="sound-waves" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="sound-cross" d="m17 9 5 6m0-6-5 6"/></svg><span id="fret-sound-label">Sound on</span></button></div></div>
         <div class="board-orientation" role="group" aria-label="Fretboard layout"><button id="board-vertical" type="button" aria-pressed="false">Vertical</button><button id="board-horizontal" type="button" aria-pressed="true">Horizontal</button></div>
         <div id="board-scroll" class="board-scroll" tabindex="0" role="region" aria-label="Fretboard; scroll sideways for more frets"><div id="fretboard" class="fretboard"></div></div>
-        <form id="typed-answer-form" class="typed-answer" hidden novalidate>
+        <form id="typed-answer-form" class="typed-answer keyboard-only" hidden novalidate>
           <label id="typed-answer-label" for="typed-answer">Fret number</label>
           <div class="typed-answer-controls"><input id="typed-answer" type="text" inputmode="numeric" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="typed-answer-help typed-answer-error"><button type="submit" class="primary">Check answer</button></div>
           <p id="typed-answer-help" class="small-copy">Type a fret number, then press Enter.</p>
@@ -59,7 +59,7 @@
           <button id="advance" class="primary" hidden>Next level</button>
           <button id="explore" class="secondary" hidden>Back to explore</button>
         </div>
-        <details class="help-details"><summary>Keyboard controls</summary><p id="keyboard-help" class="small-copy">Keyboard: Tab to a control, then Enter to use it. Arrow keys move between fret positions and note choices.</p></details>
+        <details class="help-details keyboard-only"><summary>Keyboard controls</summary><p id="keyboard-help" class="small-copy">Keyboard: Tab to a control, then Enter to use it. Arrow keys move between fret positions and note choices.</p></details>
         <p class="small-copy"><a href="assets/guitar/CREDITS.txt">Guitar samples</a> · Iowa / nbrosowsky · CC BY 3.0</p>
         <p id="audio-error" class="error" role="alert" hidden></p>
         <noscript><p>This exercise needs JavaScript. Enable it, then reload this page.</p></noscript>

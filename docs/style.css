@@ -357,3 +357,7 @@ p:empty { display: none; }
 .pwa-dismiss-notice { max-width: 480px; padding: 16px 20px; margin: 0 0 20px; background: var(--tint); border-radius: 12px; color: var(--tone-tint-ink); }
 .pwa-dismiss-notice p { margin: 0 0 8px; font-size: 14px; line-height: 1.6; }
 .pwa-dismiss-notice:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+@media (any-pointer: coarse) {
+  .keyboard-only { display: none; }
+}

@@ -8,6 +8,7 @@ let storage;
 try { storage = window.localStorage; } catch { /* Practice works without storage. */ }
 const orientationKey = 'practice-room.fretboard.orientation.v1';
 const narrowBoard = matchMedia('(max-width: 760px)');
+const touchInput = matchMedia('(any-pointer: coarse)');
 let orientationPreference;
 try { const stored = storage?.getItem(orientationKey); if (['vertical', 'horizontal'].includes(stored)) orientationPreference = stored; } catch { /* Follow viewport size. */ }
 const verticalBoard = () => orientationPreference ? orientationPreference === 'vertical' : narrowBoard.matches;
@@ -263,6 +264,10 @@ function nameAnswers() {
 function focusQuestion() {
   if (onStaff()) staffInput.focus();
   else if (onGuitar()) $('reveal').focus();
+  else if (touchInput.matches) {
+    const control = questionType === 'name' ? $('note-answers').querySelector('button') : $('fretboard').querySelector('.fret[tabindex="0"]');
+    control?.focus({ preventScroll: true });
+  }
   else $('typed-answer').focus();
 }
 function typedAnswer() {
