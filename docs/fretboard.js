@@ -92,7 +92,10 @@ function answerSix(p) {
     sixWrong = p.id; $('feedback').textContent = t`${p.name} · try another fret`;
   }
   render();
-  if (sixFound.size === 6) $('next').focus({ preventScroll: true });
+  if (sixFound.size === 6) {
+    $('next').focus({ preventScroll: true });
+    $('next').scrollIntoView({ block: 'center', inline: 'nearest' });
+  }
   else {
     const focus = sixFound.has(p.string) ? [...$('fretboard').querySelectorAll('.fret')].find(b => !sixFound.has(Number(b.dataset.position.split(':')[0]))) : $('fretboard').querySelector(`[data-position="${p.id}"]`);
     if (focus) { $('fretboard').querySelectorAll('.fret').forEach(b => b.tabIndex = -1); focus.tabIndex = 0; focus.focus({ preventScroll: true }); }
