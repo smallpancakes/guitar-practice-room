@@ -346,7 +346,10 @@ p:empty { display: none; }
 .pwa-install-guide ol { margin: 16px 0; padding-left: 24px; }
 .pwa-install-guide li { padding: 8px 0 8px 4px; font-size: 14px; line-height: 1.5; }
 .pwa-install-guide li svg { display: inline-block; vertical-align: middle; margin-right: 10px; }
-.pwa-guide-status { color: var(--muted); }
+.pwa-status { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 6px 10px; border-radius: 999px; background: var(--tint); color: var(--tone-tint-ink); font-size: 12px; font-weight: 700; line-height: 1.5; }
+.pwa-status::before { content: ''; width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; background: currentColor; }
+.pwa-status[data-state="ready"] { background: var(--tone-success-bg); color: var(--tone-success-ink); }
+.pwa-status[data-state="error"] { background: var(--tone-error-bg); color: var(--tone-error-ink); }
 
 .pwa-guide-actions { display: flex; flex-wrap: wrap; gap: 8px 20px; }
 .pwa-guide-actions button { min-height: 44px; }

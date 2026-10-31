@@ -2,7 +2,7 @@ import { t } from './i18n.js';
 // Test iframes should never install a worker over other browser test fixtures.
 if ('serviceWorker' in navigator && window.isSecureContext && window.top === window) {
   const footer = document.createElement('footer'); footer.className = 'pwa-footer';
-  const status = document.createElement('span'); status.setAttribute('role', 'status');
+  const status = document.createElement('span'); status.className = 'pwa-status'; status.setAttribute('role', 'status');
   const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'text-button'; retry.textContent = t('Retry'); retry.hidden = true;
   const entry = document.createElement('section'); entry.className = 'pwa-install';
   const install = document.createElement('button'); install.type = 'button'; install.className = 'pwa-install-button';
@@ -22,8 +22,11 @@ if ('serviceWorker' in navigator && window.isSecureContext && window.top === win
   const labels = ios ? [t('Share'), t('Add to Home Screen'), t('Add')] : [t('Open the browser menu'), t('Install app or Add to Home Screen'), t('Confirm installation')];
   const paths = ios ? ['M12 16V3m-4 4 4-4 4 4M8 10H5v11h14V10h-3', 'M4 10 12 3l8 7v11H4ZM9 15h6m-3-3v6', 'M5 12h14m-7-7v14'] : ['M5 6h14M5 12h14M5 18h14', 'M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5', 'm5 12 4 4L19 6'];
   labels.forEach((label, i) => { const li = document.createElement('li'); li.append(icon(paths[i]), document.createTextNode(label)); steps.append(li); });
-  const guideStatus = document.createElement('p'); guideStatus.className = 'pwa-guide-status';
-  function setStatus(message) { status.textContent = guideStatus.textContent = t(message); }
+  const guideStatus = document.createElement('p'); guideStatus.className = 'pwa-guide-status pwa-status';
+  function setStatus(message, state = 'preparing') {
+    status.textContent = guideStatus.textContent = t(message);
+    status.dataset.state = guideStatus.dataset.state = state;
+  }
   const close = document.createElement('button'); close.type = 'button'; close.className = 'text-button'; close.textContent = t('Close guide');
   function showGuide(open) { help.hidden = !open; install.setAttribute('aria-expanded', String(open)); }
   close.addEventListener('click', () => { showGuide(false); install.focus(); });
@@ -80,14 +83,14 @@ if ('serviceWorker' in navigator && window.isSecureContext && window.top === win
       const watch = worker => {
         if (!worker) return;
         worker.addEventListener('statechange', () => {
-          if (worker.state === 'redundant' && !registration.active) { setStatus('Offline setup failed'); retry.hidden = false; }
+          if (worker.state === 'redundant' && !registration.active) { setStatus('Offline setup failed', 'error'); retry.hidden = false; }
         });
       };
       watch(registration.installing);
       registration.addEventListener('updatefound', () => watch(registration.installing));
       await navigator.serviceWorker.ready;
-      setStatus('Offline ready'); retry.hidden = true;
-    } catch { setStatus('Offline setup failed'); retry.hidden = false; }
+      setStatus('Offline ready', 'ready'); retry.hidden = true;
+    } catch { setStatus('Offline setup failed', 'error'); retry.hidden = false; }
   }
   retry.addEventListener('click', register);
   void register();
