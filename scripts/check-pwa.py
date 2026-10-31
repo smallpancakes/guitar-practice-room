@@ -172,6 +172,7 @@ with TemporaryDirectory(prefix='guitar-pwa-') as directory:
                     assert client.js("getComputedStyle(document.querySelector('.note-prompt')).position==='static'"), 'question stays in normal flow'
                     client.until("document.getElementById('floating-question').hidden")
                     assert client.js("document.getElementById('board-scroll').clientHeight>=document.getElementById('fretboard').offsetHeight"), 'vertical board has no internal scroll limit'
+                    assert client.js("getComputedStyle(document.getElementById('board-scroll')).overflowY==='visible'"), 'vertical board scrolls with the page'
                     client.js("document.querySelector('[data-position=\"0:10\"]').scrollIntoView({block:'center',behavior:'instant'})")
                     client.until("!document.getElementById('floating-question').hidden")
                     assert client.js("document.querySelector('#floating-question strong').textContent==='Find E · every string'"), 'separate reminder shows current question'
