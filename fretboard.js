@@ -1,3 +1,4 @@
+import { usePlaybackSession } from './audio-session.js';
 import { guitarSample, guitarBuffer } from './guitar-audio.js';
 import { t, lockLanguage } from './i18n.js';
 import { staffAnswer } from './staff-answer.js?v=2';
@@ -466,6 +467,7 @@ async function playNotes(notes) {
   if (!soundOn) return;
   stopAudio(); const generation = ++audioGeneration;
   try {
+    usePlaybackSession();
     const Audio = window.AudioContext || window.webkitAudioContext;
     if (!audio || audio.state === 'closed') audio = new Audio();
     await audio.resume();

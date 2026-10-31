@@ -1,9 +1,18 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><title>Metronome checks</title><body><pre id="results">Running…</pre><iframe id="app" title="Metronome under test" width="1100" height="1000"></iframe><script type="module">
+import { usePlaybackSession } from './audio-session.js';
 import { BeatClock, TapTempo, Metronome, normalizeTempo } from './metronome-engine.js';
 const results=[];
 function assert(value,message='assertion failed'){if(!value)throw new Error(message)}
 async function test(name,run){try{await run();results.push('PASS '+name)}catch(e){results.push('FAIL '+name+': '+e.message)}}
 const close=(a,b)=>Math.abs(a-b)<.00001;
+await test('Playback audio session is optional and tolerates unsupported or rejected requests',()=>{
+ const descriptor=Object.getOwnPropertyDescriptor(navigator,'audioSession');
+ try {
+  Object.defineProperty(navigator,'audioSession',{configurable:true,value:undefined});usePlaybackSession();
+  const session={type:'auto'};Object.defineProperty(navigator,'audioSession',{configurable:true,value:session});usePlaybackSession();assert(session.type==='playback');
+  Object.defineProperty(navigator,'audioSession',{configurable:true,value:{set type(value){throw Error('Not supported')}}});usePlaybackSession();
+ } finally {if(descriptor)Object.defineProperty(navigator,'audioSession',descriptor);else delete navigator.audioSession}
+});
 await test('Tempo normalizes empty, invalid and out-of-range values',()=>{
  assert(normalizeTempo('')===80);assert(normalizeTempo('bad',90)===90);assert(normalizeTempo(1)===40);assert(normalizeTempo(300)===240);assert(normalizeTempo(81.6)===82);
 });
@@ -100,9 +109,10 @@ try{
   now=5000;press();assert($('bpm').value==='120','right clicks must not count');
   now=8000;tap.click();now=9000;tap.click();assert($('bpm').value==='60','keyboard and assistive clicks still work');
  });
+ Object.defineProperty(w.navigator,'audioSession',{configurable:true,value:{type:'auto'}});
  let audio;Object.defineProperty(w,'AudioContext',{configurable:true,value:class extends FakeAudio{constructor(){super();audio=this}}});
  await test('Start and Stop work; Space toggles without hijacking form controls',async()=>{
-  $('metro-toggle').click();await wait(20);assert($('metro-toggle').textContent==='Stop metronome');assert(audio.notes.length>0);
+  $('metro-toggle').click();await wait(20);assert($('metro-toggle').textContent==='Stop metronome');assert(audio.notes.length>0);assert(w.navigator.audioSession.type==='playback','metronome requests playback session');
   const key=()=>new w.KeyboardEvent('keydown',{code:'Space',bubbles:true,cancelable:true});$('bpm').dispatchEvent(key());assert($('metro-toggle').textContent==='Stop metronome');
   d.body.dispatchEvent(key());assert($('metro-toggle').textContent==='Start metronome'&&audio.state==='closed');
  });

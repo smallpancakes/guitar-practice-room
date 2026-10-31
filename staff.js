@@ -1,3 +1,4 @@
+import { usePlaybackSession } from './audio-session.js';
 import { t, lockLanguage } from './i18n.js';
 import { LEVELS, TIERS, STAFF_KEY, geometry, describe, parseAnswer, matches, guitarLocations, readState, progress, credit, completeLevel, pick } from './staff-engine.js';
 const $ = id => document.getElementById(id), show = (id, visible) => { $(id).hidden = !visible; };
@@ -138,6 +139,7 @@ function stopSound() { audioVersion++; if (oscillator) { try { oscillator.stop()
 $('listen').addEventListener('click', async () => {
   stopSound(); const version = audioVersion;
   try {
+    usePlaybackSession();
     if (!audio || audio.state === 'closed') audio = new (window.AudioContext || window.webkitAudioContext)();
     await audio.resume(); if (version !== audioVersion || document.hidden) return;
     const voice = audio.createOscillator(), gain = audio.createGain(), time = audio.currentTime;

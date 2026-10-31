@@ -269,11 +269,12 @@ try{
     decodeAudioData(){return Promise.resolve({duration:3})}
     createBufferSource(){const n={playbackRate:{},connect(){},disconnect(){},start(){notes.push(n)},stop(at){if(at===undefined)n.stopped=true}};return n}
    }
+   Object.defineProperty(w.navigator,'audioSession',{configurable:true,value:{type:'auto'}});
    Object.defineProperty(w,'AudioContext',{value:Audio,configurable:true});
    w.fetch=async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)});
    const tick=()=>new Promise(r=>setTimeout(r,0));
    $('exercise-six').click();d.querySelector('[data-position="0:0"]').click();await tick();
-   assert(notes.at(-1).playbackRate.value===1&&guitarSample(64).url.endsWith('/E4.mp3'),'high E plays at correct pitch');
+   assert(notes.at(-1).playbackRate.value===1&&guitarSample(64).url.endsWith('/E4.mp3'),'high E plays at correct pitch');assert(w.navigator.audioSession.type==='playback','guitar requests media playback');
    d.querySelector('[data-position="0:0"]').click();await tick();
    assert(notes.length===2&&$('round-count').textContent==='1 / 6 strings','replay does not count again');
    d.querySelector('[data-position="1:0"]').click();await tick();
@@ -282,6 +283,7 @@ try{
    d.querySelector('[data-position="1:5"]').click();await tick();assert(notes.length===3&&$('round-count').textContent==='2 / 6 strings','mute retains grading');
    await load();w=frame.contentWindow;d=w.document;$=id=>d.getElementById(id);
    assert($('fret-sound').getAttribute('aria-pressed')==='false','mute survives reload');
+   Object.defineProperty(w.navigator,'audioSession',{configurable:true,value:{type:'auto'}});
    Object.defineProperty(w,'AudioContext',{value:Audio,configurable:true});
    w.fetch=async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)});
    $('fret-sound').click();$('scope').value='starter';$('scope').dispatchEvent(new w.Event('change'));$('start').click();

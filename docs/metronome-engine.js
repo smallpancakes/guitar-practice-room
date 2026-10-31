@@ -1,3 +1,4 @@
+import { usePlaybackSession } from './audio-session.js';
 import { t } from './i18n.js';
 export const MIN_BPM = 40;
 export const MAX_BPM = 240;
@@ -77,6 +78,7 @@ export class Metronome {
     const generation = ++this.generation;
     this.state = 'starting'; this.onState('starting');
     try {
+      usePlaybackSession();
       const context = this.createContext();
       this.context = context;
       await context.resume();
