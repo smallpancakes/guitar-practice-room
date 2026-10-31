@@ -8,7 +8,7 @@ Use **Palette** in the header to choose **Pancake**, the default cream, honey, p
 
 ## Language
 
-Use **Language / 語言** in the header to choose **English** or **繁體中文** (Traditional Chinese). The choice is remembered across tools and visits. On the first visit, Traditional Chinese browser preferences (`zh-Hant`, `zh-TW`, `zh-HK`, `zh-MO`) select Traditional Chinese; other languages fall back to English. Links with `?lang=zh-Hant` or `?lang=en` override the saved choice and work when storage is blocked.
+Use **Language / 語言** in the header to choose **English** or **繁體中文** (Traditional Chinese). The choice is remembered across tools and visits. On the first visit, the browser’s ordered language preferences select the first supported language: any Chinese locale (`zh`, `zh-TW`, `zh-Hant`, `zh-CN`, etc.) uses the available Traditional Chinese translation, and English locales use English. Unsupported languages are skipped; if none match, English is the fallback. Detection uses `navigator.language` if the preference list is empty and does not save an inferred choice. Links with `?lang=zh-Hant` or `?lang=en` override the saved choice and work when storage is blocked.
 
 Switch languages between rounds; the selector is disabled during practice and while a chord result awaits saving or discarding. Switching reloads the page. Saved practice records, level identifiers, chord symbols and note names are shared between languages. Practice-log dates follow the selected language.
 

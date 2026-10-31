@@ -10,7 +10,9 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,80));
 try {
 await test('Locale detection, explicit preference and unsupported-language fallback',()=>{
  assert(resolveLocale(null,null,['zh-TW'])==='zh-Hant');assert(resolveLocale(null,null,['zh-Hant-HK'])==='zh-Hant');assert(resolveLocale(null,null,['zh-HK'])==='zh-Hant');
- assert(resolveLocale(null,null,['zh-CN','en'])==='en');assert(resolveLocale(null,null,['fr'])==='en');
+ assert(resolveLocale(null,null,['zh-CN','en'])==='zh-Hant');assert(resolveLocale(null,null,['fr'])==='en');
+ assert(resolveLocale(null,null,['zh'])==='zh-Hant');assert(resolveLocale(null,null,['zh-Hans-SG'])==='zh-Hant');
+ assert(resolveLocale(null,null,['fr','zh-TW','en'])==='zh-Hant');assert(resolveLocale(null,null,['en-GB','zh-TW'])==='en');assert(resolveLocale(null,null,[])==='en');
  assert(resolveLocale(null,'en',['zh-TW'])==='en');assert(resolveLocale('zh-Hant','en',['en'])==='zh-Hant');assert(resolveLocale('invalid','invalid',['en'])==='en');
 });
 await test('All tools translate headings, labels, metadata and levels at desktop and mobile widths',async()=>{
@@ -49,6 +51,19 @@ await test('Selector persists choice across tools, restores English and preserve
  await change('en');assert(doc().documentElement.lang==='en');assert(el('metro-toggle').textContent==='Start metronome');assert(localStorage.getItem(key)==='en');
  await change('zh-Hant');await load('index.html');assert(doc().documentElement.lang==='zh-Hant');
  assert(JSON.stringify(before)===JSON.stringify(Object.fromEntries(Object.entries(localStorage).filter(([k])=>k!==key))),'practice records changed');
+});
+await test('First visits use browser preferences on every tool without saving an inferred choice',async()=>{
+ localStorage.removeItem(key);
+ for(const page of ['index.html','metronome.html','fretboard.html','staff.html']){
+  for(const [languages,language,expected] of [[['fr','zh'],'fr','zh-Hant'],[['en-US','zh-TW'],'en-US','en'],[[], 'zh-TW','zh-Hant']]){
+   let source=await (await fetch(page)).text();
+   source=source.replace('<head>',`<head><base href="${new URL('./',location.href)}"><script>Object.defineProperty(navigator,'languages',{value:${JSON.stringify(languages)}});Object.defineProperty(navigator,'language',{value:${JSON.stringify(language)}});<\/script>`);
+   await new Promise(resolve=>{frame.onload=resolve;frame.srcdoc=source});
+   assert(doc().documentElement.lang===expected,page+' first-visit locale');assert(el('language').value===expected);
+   assert(localStorage.getItem(key)===null,'inferred language must not override a later browser preference');
+  }
+ }
+ frame.removeAttribute('srcdoc');
 });
 await test('Blocked storage still renders browser-selected Traditional Chinese and carries language in links',async()=>{
  let source=await (await fetch('fretboard.html')).text();

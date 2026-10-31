@@ -1,9 +1,15 @@
 // This recovery entry is deliberately excluded from the offline cache.
 const scope = new URL('./', location.href).href;
 const button = document.getElementById('refresh-app'), status = document.getElementById('refresh-status');
-let zh = /^zh/i.test(navigator.language);
-try { const saved = localStorage.getItem('practice-room.language.v1'); if (saved) zh = saved === 'zh-Hant'; } catch { /* Browser language is enough. */ }
-if (new URLSearchParams(location.search).has('lang')) zh = new URLSearchParams(location.search).get('lang') === 'zh-Hant';
+const languages = navigator.languages?.length ? navigator.languages : [navigator.language];
+let zh = false;
+for (const language of languages) {
+  if (/^zh(?:-|$)/i.test(language)) { zh = true; break; }
+  if (/^en(?:-|$)/i.test(language)) break;
+}
+try { const saved = localStorage.getItem('practice-room.language.v1'); if (['en', 'zh-Hant'].includes(saved)) zh = saved === 'zh-Hant'; } catch { /* Browser language is enough. */ }
+const requested = new URLSearchParams(location.search).get('lang');
+if (['en', 'zh-Hant'].includes(requested)) zh = requested === 'zh-Hant';
 document.documentElement.lang = zh ? 'zh-Hant' : 'en';
 for (const el of document.querySelectorAll('[data-zh]')) if (zh) el.textContent = el.dataset.zh;
 const say = (en, chinese) => status.textContent = zh ? chinese : en;

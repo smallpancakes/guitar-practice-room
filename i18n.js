@@ -6,14 +6,15 @@ export function resolveLocale(requested, saved, languages = []) {
   if (supported(requested)) return requested;
   if (supported(saved)) return saved;
   for (const language of languages) {
-    if (/^zh-(?:Hant|TW|HK|MO)(?:-|$)/i.test(language)) return 'zh-Hant';
-    if (/^en(?:-|$)/i.test(language) || /^zh(?:-|$)/i.test(language)) return 'en';
+    // Traditional Chinese is our available Chinese translation.
+    if (/^zh(?:-|$)/i.test(language)) return 'zh-Hant';
+    if (/^en(?:-|$)/i.test(language)) return 'en';
   }
   return 'en';
 }
 let saved;
 try { saved = localStorage.getItem(preferenceKey); } catch { /* Preference is optional. */ }
-export const locale = resolveLocale(new URLSearchParams(location.search).get('lang'), saved, navigator.languages);
+export const locale = resolveLocale(new URLSearchParams(location.search).get('lang'), saved, navigator.languages?.length ? navigator.languages : [navigator.language]);
 
 // Plain strings and tagged templates share one catalog; numbered placeholders can be reordered.
 export function t(message, ...values) {
