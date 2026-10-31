@@ -168,13 +168,18 @@ with TemporaryDirectory(prefix='guitar-pwa-') as directory:
                     client.until("!document.getElementById('audio-error').hidden === false")
                     client.call('Emulation.setDeviceMetricsOverride', {'width':390,'height':844,'deviceScaleFactor':1,'mobile':True})
                     client.until("document.getElementById('fretboard').classList.contains('vertical-board')")
-                    client.js("window.scrollTo({top:0,behavior:'instant'})")
-                    client.until("getComputedStyle(document.querySelector('.note-prompt')).position==='static'")
-                    client.js("document.querySelector('[data-position=\"0:10\"]').scrollIntoView({block:'center',behavior:'instant'})")
-                    client.until("document.querySelector('.note-prompt').classList.contains('question-pinned') && Math.abs(document.querySelector('.note-prompt').getBoundingClientRect().top)<1")
                     client.js("document.getElementById('question-start').scrollIntoView({block:'start',behavior:'instant'})")
-                    client.until("getComputedStyle(document.querySelector('.note-prompt')).position==='static'")
+                    assert client.js("getComputedStyle(document.querySelector('.note-prompt')).position==='static'"), 'question stays in normal flow'
+                    before = client.js("document.getElementById('prompt').getBoundingClientRect().top")
+                    client.js("const scroller=document.getElementById('board-scroll');scroller.scrollTo({top:scroller.scrollHeight,behavior:'instant'})")
+                    assert client.js("document.getElementById('board-scroll').scrollTop>0"), 'vertical board scrolls internally'
+                    assert abs(client.js("document.getElementById('prompt').getBoundingClientRect().top") - before) < 1, 'scrolling board keeps question in place'
                     assert client.js("document.getElementById('round-count').textContent") == '1 / 6 strings', 'scrolling preserves hunt progress'
+                    client.js("['1:5','2:9','3:2','4:7','5:0'].forEach(id=>document.querySelector('[data-position=\"'+id+'\"]').click())")
+                    client.until("!document.getElementById('next').hidden")
+                    client.js("document.getElementById('next').click()")
+                    client.until("document.getElementById('board-scroll').scrollTop<1 && document.getElementById('question-start').getBoundingClientRect().top>=-1 && document.getElementById('question-start').getBoundingClientRect().bottom<innerHeight")
+                    assert client.js("document.getElementById('round-count').textContent") == '0 / 6 strings', 'next note resets board and progress'
                     client.call('Emulation.clearDeviceMetricsOverride')
                 assert client.js("localStorage.getItem('pwa-progress-check')") == 'preserved'
             result = client.js("""(async()=>{const {guitarSample,guitarBuffer}=await import('./guitar-audio.js');const c=new OfflineAudioContext(1,44100,44100);const b=await guitarBuffer(c,guitarSample(64).url);const s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start();const rendered=await c.startRendering();return rendered.getChannelData(0).some(v=>Math.abs(v)>.01)})()""")
