@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "smallpancakes’s guitar practice room",
-  "short_name": "Guitar practice",
+  "name": "smallpancakes",
+  "short_name": "smallpancakes",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
