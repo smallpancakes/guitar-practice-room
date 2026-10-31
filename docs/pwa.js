@@ -28,14 +28,27 @@ if ('serviceWorker' in navigator && window.isSecureContext && window.top === win
   function showGuide(open) { help.hidden = !open; install.setAttribute('aria-expanded', String(open)); }
   close.addEventListener('click', () => { showGuide(false); install.focus(); });
   entry.addEventListener('keydown', event => { if (event.key === 'Escape' && !help.hidden) { showGuide(false); install.focus(); } });
-  help.append(title, hint, steps, guideStatus, close); entry.append(install, help);
+  const dismiss = document.createElement('button'); dismiss.id = 'pwa-installed'; dismiss.type = 'button'; dismiss.className = 'text-button'; dismiss.textContent = t('Already installed');
+  const guideActions = document.createElement('div'); guideActions.className = 'pwa-guide-actions'; guideActions.append(close, dismiss);
+  help.append(title, hint, steps, guideStatus, guideActions); entry.append(install, help);
   document.querySelector('.tool-nav').after(entry);
   const refresh = document.createElement('a'); refresh.href = './update.html'; refresh.textContent = t('Refresh app'); refresh.className = 'text-button';
-  footer.append(status, retry, refresh); document.querySelector('main').append(footer);
-  let deferred, installed = false;
+  const guideLink = document.createElement('button'); guideLink.id = 'pwa-install-guide-link'; guideLink.type = 'button'; guideLink.className = 'text-button'; guideLink.textContent = t('Install guide'); guideLink.hidden = true;
+  footer.append(status, retry, guideLink, refresh); document.querySelector('main').append(footer);
+  let deferred, installed = false, dismissed = false;
+  const dismissalKey = 'practice-room.install-dismissed.v1';
+  try { dismissed = localStorage.getItem(dismissalKey) === 'yes'; } catch { /* Keep the choice for this visit. */ }
+  function saveDismissal(value) {
+    dismissed = value;
+    try { if (value) localStorage.setItem(dismissalKey, 'yes'); else localStorage.removeItem(dismissalKey); } catch { /* Storage is optional. */ }
+    syncVisibility();
+  }
+  dismiss.addEventListener('click', () => { saveDismissal(true); guideLink.focus({ preventScroll: true }); });
+  guideLink.addEventListener('click', () => { saveDismissal(false); showGuide(true); install.focus(); });
+  window.addEventListener('storage', event => { if (event.key === dismissalKey || event.key === null) { dismissed = event.newValue === 'yes'; syncVisibility(); } });
   const display = matchMedia('(display-mode: standalone)');
   const standalone = () => display.matches || navigator.standalone || installed;
-  function syncVisibility() { entry.hidden = Boolean(standalone()); if (entry.hidden) showGuide(false); }
+  function syncVisibility() { entry.hidden = Boolean(standalone() || dismissed); guideLink.hidden = Boolean(standalone() || !dismissed); if (entry.hidden) showGuide(false); }
   syncVisibility(); display.addEventListener('change', syncVisibility);
   window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferred = event; syncVisibility(); });
   install.addEventListener('click', async () => {

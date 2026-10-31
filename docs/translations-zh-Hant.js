@@ -1,5 +1,7 @@
 // English source messages are the stable catalog keys. Keep chord and note symbols unchanged.
 export default {
+  "Already installed": "已經安裝了",
+  "Install guide": "安裝說明",
   "Refresh app": "更新 App",
   "Left: thickest string. 0: open string. Fret 12: one octave higher.": "最粗的弦在左，0 是空弦，第 12 格高一個八度。",
   "Fretboard layout": "指板方向",

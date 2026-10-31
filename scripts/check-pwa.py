@@ -112,6 +112,14 @@ with TemporaryDirectory(prefix='guitar-pwa-') as directory:
             assert client.js("!document.getElementById('install-guide').hidden && document.querySelector('.pwa-guide-status').textContent==='可離線使用'"), 'guide opens with offline readiness'
             client.js("document.querySelector('#install-guide button').click()")
             assert client.js("document.getElementById('install-guide').hidden"), 'guide closes'
+            assert client.js("!!document.getElementById('pwa-installed')"), 'already-installed dismissal is available'
+            client.js("document.querySelector('.pwa-install-button').click();document.getElementById('pwa-installed').click()")
+            assert client.js("document.querySelector('.pwa-install').hidden && !document.getElementById('pwa-install-guide-link').hidden"), 'dismissed entry stays accessible through footer'
+            client.call('Page.navigate', {'url':url+'metronome.html?lang=zh-Hant'})
+            client.until("document.querySelector('.pwa-install')?.hidden && !!document.getElementById('pwa-install-guide-link')")
+            client.js("document.getElementById('pwa-install-guide-link').click()")
+            assert client.js("!document.querySelector('.pwa-install').hidden && !document.getElementById('install-guide').hidden"), 'footer restores guide and install option'
+            client.js("document.querySelector('#install-guide button').click()")
             client.js("window.installCalls=0;const e=new Event('beforeinstallprompt',{cancelable:true});e.prompt=async()=>{window.installCalls++};e.userChoice=Promise.resolve({outcome:'dismissed'});window.dispatchEvent(e);document.querySelector('.pwa-install-button').click()")
             client.until("window.installCalls===1 && !document.querySelector('.pwa-install-button').disabled && !document.getElementById('install-guide').hidden")
             client.js("window.dispatchEvent(new Event('appinstalled'))")
