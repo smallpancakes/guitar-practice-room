@@ -507,6 +507,35 @@ async function playNotes(notes) {
 function releaseAudio() { audioGeneration++; stopAudio(); if (audio && audio.state !== 'closed') audio.close().catch(() => {}); audio = undefined; }
 document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAudio(); });
 window.addEventListener('pagehide', releaseAudio);
+// Use normal flow for the initial question. Pin only after scrolling past it;
+// native sticky text can be clipped on iOS when switching practice modes.
+const questionAnchor = $('question-start');
+const questionPanel = questionAnchor.querySelector('.note-prompt');
+const practicePanel = questionAnchor.closest('.fret-panel');
+let questionFrame;
+function positionQuestion() {
+  questionFrame = undefined;
+  const anchor = questionAnchor.getBoundingClientRect(), panel = practicePanel.getBoundingClientRect();
+  const pinned = verticalBoard() && anchor.top < -1 && panel.bottom > 0;
+  questionPanel.classList.toggle('question-pinned', pinned);
+  if (pinned) {
+    questionPanel.style.left = `${panel.left + practicePanel.clientLeft}px`;
+    questionPanel.style.width = `${practicePanel.clientWidth}px`;
+    questionAnchor.style.height = `${questionPanel.offsetHeight + 16}px`;
+    questionPanel.style.top = `${Math.min(0, panel.bottom - questionPanel.offsetHeight - 24)}px`;
+  } else {
+    questionPanel.style.removeProperty('left'); questionPanel.style.removeProperty('width'); questionPanel.style.removeProperty('top');
+    questionAnchor.style.removeProperty('height');
+  }
+}
+function scheduleQuestion() {
+  if (questionFrame === undefined) questionFrame = requestAnimationFrame(positionQuestion);
+}
+window.addEventListener('scroll', scheduleQuestion, { passive: true });
+window.addEventListener('resize', scheduleQuestion);
+new MutationObserver(scheduleQuestion).observe(questionPanel, { childList: true, subtree: true, characterData: true });
+new MutationObserver(scheduleQuestion).observe(practicePanel, { attributes: true, attributeFilter: ['class'] });
+document.fonts.ready.then(scheduleQuestion);
 explore();
 
 document.fonts.load('80px Bravura', '\uE050').then(faces => { if (!faces.length) throw Error(t('Missing font')); notationReady = true; render(); }).catch(() => { $('notation-error').textContent = t('The notation font could not load. Reload to use staff answers; note-name practice is still available.'); setVisible('notation-error', true); });

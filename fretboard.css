@@ -126,10 +126,10 @@
 .vertical-board .fret span { width: 28px; height: 28px; min-width: 28px; min-height: 28px; line-height: 1; }
 
 /* Keep the task visible throughout the tall board and its answer controls. */
+#question-start { display: flow-root; }
 .fret-panel.vertical-practice { overflow: visible; }
-.vertical-practice .note-prompt { position: sticky; top: 0; z-index: 3; padding-block: 12px; border-bottom: 1px solid var(--line); }
-/* Keep Safari's sticky text in the panel's own compositing layer when modes resize it. */
-.vertical-practice .note-prompt { transform: translateZ(0); }
+.vertical-practice .note-prompt { padding-block: 12px; border-bottom: 1px solid var(--line); }
+.note-prompt.question-pinned { position: fixed; top: 0; z-index: 3; margin: 0; }
 .vertical-practice .note-prompt h3 { font-size: 20px; margin-bottom: 4px; }
 @media (max-width: 360px) {
   .note-prompt { margin-inline: -16px; padding-inline: 16px; }
