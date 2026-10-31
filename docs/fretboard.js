@@ -192,6 +192,7 @@ function guide() {
 function board() {
   const config = SCOPES[onSix() ? 'full' : scope], board = $('fretboard'); board.replaceChildren();
   const vertical = verticalBoard();
+  board.closest('.fret-panel').classList.toggle('vertical-practice', vertical);
   const strings = vertical ? [...config.strings].reverse() : config.strings;
   board.classList.toggle('short-board', !vertical && config.max === 5);
   board.classList.toggle('vertical-board', vertical);

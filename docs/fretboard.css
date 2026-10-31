@@ -124,3 +124,11 @@
 .vertical-board .fret-label { display: grid; place-items: center; padding: 0; font-size: 11px; }
 .vertical-board .fret-marker { height: auto; min-height: 52px; background: transparent; }
 .vertical-board .fret span { width: 28px; height: 28px; min-width: 28px; min-height: 28px; line-height: 1; }
+
+/* Keep the task visible throughout the tall board and its answer controls. */
+.fret-panel.vertical-practice { overflow: visible; }
+.vertical-practice .note-prompt { position: sticky; top: 0; z-index: 3; padding-block: 12px; border-bottom: 1px solid var(--line); }
+.vertical-practice .note-prompt h3 { font-size: 20px; margin-bottom: 4px; }
+@media (max-width: 360px) {
+  .note-prompt { margin-inline: -16px; padding-inline: 16px; }
+}
