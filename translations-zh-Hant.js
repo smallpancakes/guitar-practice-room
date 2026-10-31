@@ -6,6 +6,8 @@ export default {
   "Already installed": "已經安裝了",
   "Install guide": "安裝說明",
   "Refresh app": "更新 App",
+  "Update app": "更新 App",
+  "New version ready": "有新版本可更新",
   "Left: thickest string. 0: open string. Fret 12: one octave higher.": "最粗的弦在左，0 是空弦，第 12 格高一個八度。",
   "Fretboard layout": "指板方向",
   "Vertical": "直向",

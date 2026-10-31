@@ -43,6 +43,15 @@ if ('serviceWorker' in navigator && window.isSecureContext && window.top === win
   const acknowledge = document.createElement('button'); acknowledge.type = 'button'; acknowledge.className = 'text-button'; acknowledge.textContent = t('Got it');
   const noticeActions = document.createElement('div'); noticeActions.className = 'pwa-guide-actions'; noticeActions.append(reopen, acknowledge);
   notice.append(noticeText, noticeActions); entry.after(notice);
+  const updateNotice = document.createElement('aside'); updateNotice.id = 'pwa-update'; updateNotice.className = 'pwa-update'; updateNotice.hidden = true;
+  const updateMessage = document.createElement('span'); updateMessage.setAttribute('role', 'status');
+  const updateLink = document.createElement('a'); updateLink.className = 'primary'; updateLink.textContent = t('Update app');
+  updateLink.href = './update.html?lang=' + document.documentElement.lang;
+  updateNotice.append(updateMessage, updateLink); notice.after(updateNotice);
+  function showUpdate() {
+    updateMessage.textContent = t('New version ready');
+    updateNotice.hidden = false;
+  }
   const refresh = document.createElement('a'); refresh.href = './update.html'; refresh.textContent = t('Refresh app'); refresh.className = 'text-button';
   const guideLink = document.createElement('button'); guideLink.id = 'pwa-install-guide-link'; guideLink.type = 'button'; guideLink.className = 'text-button'; guideLink.textContent = t('Install guide'); guideLink.hidden = true;
   footer.append(status, retry, guideLink, refresh); document.querySelector('main').append(footer);
@@ -76,15 +85,30 @@ if ('serviceWorker' in navigator && window.isSecureContext && window.top === win
     finally { install.disabled = false; syncVisibility(); }
   });
   window.addEventListener('appinstalled', () => { deferred = null; installed = true; syncVisibility(); });
+  let currentRegistration, checkingUpdate = false, lastUpdateCheck = 0;
+  async function checkUpdate() {
+    if (!currentRegistration || checkingUpdate || document.hidden || !navigator.onLine || Date.now() - lastUpdateCheck < 60000) return;
+    checkingUpdate = true; lastUpdateCheck = Date.now();
+    try { await currentRegistration.update(); } catch { /* Keep the current offline release usable. */ }
+    finally { checkingUpdate = false; }
+  }
+  document.addEventListener('visibilitychange', checkUpdate);
+  window.addEventListener('online', checkUpdate);
+  window.addEventListener('pageshow', checkUpdate);
+  setInterval(checkUpdate, 5 * 60 * 1000);
   async function register() {
     retry.hidden = true; setStatus('Preparing offline…');
     try {
       const registration = await navigator.serviceWorker.register(new URL('./sw.js', import.meta.url), { updateViaCache: 'none' });
+      currentRegistration = registration; lastUpdateCheck = Date.now();
+      if (registration.waiting) showUpdate();
       const watch = worker => {
         if (!worker) return;
-        worker.addEventListener('statechange', () => {
+        const changed = () => {
+          if (worker.state === 'installed' && registration.active) showUpdate();
           if (worker.state === 'redundant' && !registration.active) { setStatus('Offline setup failed', 'error'); retry.hidden = false; }
-        });
+        };
+        worker.addEventListener('statechange', changed); changed();
       };
       watch(registration.installing);
       registration.addEventListener('updatefound', () => watch(registration.installing));

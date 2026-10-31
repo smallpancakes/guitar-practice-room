@@ -358,6 +358,9 @@ p:empty { display: none; }
 .pwa-dismiss-notice p { margin: 0 0 8px; font-size: 14px; line-height: 1.6; }
 .pwa-dismiss-notice:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 
+.pwa-update { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px 20px; margin-bottom: 20px; border-radius: 12px; background: var(--yellow); color: var(--ink); font-size: 14px; font-weight: 700; }
+.pwa-update .primary { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; text-decoration: none; }
+
 @media (any-pointer: coarse) {
   .keyboard-only { display: none; }
 }

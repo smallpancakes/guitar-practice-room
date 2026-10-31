@@ -175,8 +175,15 @@ with TemporaryDirectory(prefix='guitar-pwa-') as directory:
             # Change only the packaged test copy, leaving the source release untouched.
             worker = base / scope / 'sw.js'
             worker.write_text(re.sub(r"PREFIX \+ '[a-f0-9]+'", "PREFIX + 'test-update'", worker.read_text()))
-            client.js("navigator.serviceWorker.getRegistration().then(r=>r.update())")
+            assert client.js("document.getElementById('pwa-update').hidden"), 'no update notice for current version'
+            client.js("(()=>{const now=Date.now;Date.now=()=>now()+61000;document.dispatchEvent(new Event('visibilitychange'));Date.now=now})()")
             client.until("navigator.serviceWorker.getRegistration().then(r=>!!r.waiting)")
+            client.until("!document.getElementById('pwa-update').hidden")
+            assert client.js("document.querySelector('#pwa-update [role=status]').textContent==='New version ready'"), 'downloaded update is announced'
+            assert client.js("document.querySelector('#pwa-update a').href.endsWith('/update.html?lang=en')"), 'update action opens recovery screen'
+            client.call('Page.navigate', {'url':url+'fretboard.html?lang=zh-Hant'})
+            client.until("document.getElementById('pwa-update') && !document.getElementById('pwa-update').hidden")
+            assert client.js("document.querySelector('#pwa-update [role=status]').textContent==='有新版本可更新'"), 'waiting update remains visible across tools in selected language'
             assert client.js("navigator.serviceWorker.controller.state") == 'activated'
             print(f'PASS {scope}: update waits without interrupting the open app')
             client.sock.close()
