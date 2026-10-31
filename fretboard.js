@@ -510,6 +510,33 @@ async function playNotes(notes) {
 function releaseAudio() { audioGeneration++; stopAudio(); if (audio && audio.state !== 'closed') audio.close().catch(() => {}); audio = undefined; }
 document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAudio(); });
 window.addEventListener('pagehide', releaseAudio);
+// A separate reminder leaves the original question in normal document flow.
+const floatingQuestion = document.createElement('div');
+floatingQuestion.id = 'floating-question'; floatingQuestion.className = 'floating-question';
+floatingQuestion.hidden = true; floatingQuestion.setAttribute('aria-hidden', 'true');
+const floatingTitle = document.createElement('strong'), floatingHelp = document.createElement('p');
+floatingQuestion.append(floatingTitle, floatingHelp); document.body.append(floatingQuestion);
+const originalQuestion = $('question-start'), practicePanel = originalQuestion.closest('.fret-panel');
+let reminderFrame;
+function updateQuestionReminder() {
+  reminderFrame = undefined;
+  const panel = practicePanel.getBoundingClientRect();
+  floatingTitle.textContent = onSix() ? t`Find ${NAMES[Number($('six-note').value)]} · every string` : $('prompt').textContent;
+  floatingHelp.textContent = onSix() ? '' : $('prompt-help').textContent;
+  floatingHelp.hidden = onSix() || !floatingHelp.textContent;
+  floatingQuestion.style.left = `${panel.left + practicePanel.clientLeft}px`;
+  floatingQuestion.style.width = `${practicePanel.clientWidth}px`;
+  floatingQuestion.hidden = !verticalBoard() || originalQuestion.getBoundingClientRect().bottom > 0 || panel.bottom <= 0;
+  if (!floatingQuestion.hidden) floatingQuestion.style.top = `${Math.min(0, panel.bottom - floatingQuestion.offsetHeight)}px`;
+}
+function scheduleQuestionReminder() {
+  if (reminderFrame === undefined) reminderFrame = requestAnimationFrame(updateQuestionReminder);
+}
+window.addEventListener('scroll', scheduleQuestionReminder, { passive: true });
+window.addEventListener('resize', scheduleQuestionReminder);
+new MutationObserver(scheduleQuestionReminder).observe(originalQuestion, { childList: true, subtree: true, characterData: true });
+new MutationObserver(scheduleQuestionReminder).observe(practicePanel, { attributes: true, attributeFilter: ['class'] });
+document.fonts.ready.then(scheduleQuestionReminder);
 explore();
 
 document.fonts.load('80px Bravura', '\uE050').then(faces => { if (!faces.length) throw Error(t('Missing font')); notationReady = true; render(); }).catch(() => { $('notation-error').textContent = t('The notation font could not load. Reload to use staff answers; note-name practice is still available.'); setVisible('notation-error', true); });

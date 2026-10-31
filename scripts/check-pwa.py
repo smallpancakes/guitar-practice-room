@@ -170,15 +170,19 @@ with TemporaryDirectory(prefix='guitar-pwa-') as directory:
                     client.until("document.getElementById('fretboard').classList.contains('vertical-board')")
                     client.js("document.getElementById('question-start').scrollIntoView({block:'start',behavior:'instant'})")
                     assert client.js("getComputedStyle(document.querySelector('.note-prompt')).position==='static'"), 'question stays in normal flow'
-                    before = client.js("document.getElementById('prompt').getBoundingClientRect().top")
-                    client.js("const scroller=document.getElementById('board-scroll');scroller.scrollTo({top:scroller.scrollHeight,behavior:'instant'})")
-                    assert client.js("document.getElementById('board-scroll').scrollTop>0"), 'vertical board scrolls internally'
-                    assert abs(client.js("document.getElementById('prompt').getBoundingClientRect().top") - before) < 1, 'scrolling board keeps question in place'
+                    client.until("document.getElementById('floating-question').hidden")
+                    assert client.js("document.getElementById('board-scroll').clientHeight>=document.getElementById('fretboard').offsetHeight"), 'vertical board has no internal scroll limit'
+                    client.js("document.querySelector('[data-position=\"0:10\"]').scrollIntoView({block:'center',behavior:'instant'})")
+                    client.until("!document.getElementById('floating-question').hidden")
+                    assert client.js("document.querySelector('#floating-question strong').textContent==='Find E · every string'"), 'separate reminder shows current question'
+                    assert client.js("getComputedStyle(document.querySelector('.note-prompt')).position==='static'"), 'original question never changes position mode'
+                    assert client.js("(()=>{const r=document.querySelector('[data-position=\"0:10\"]').getBoundingClientRect();return r.top>document.getElementById('floating-question').getBoundingClientRect().bottom&&r.bottom<innerHeight})()"), 'fret ten is visible below reminder'
                     assert client.js("document.getElementById('round-count').textContent") == '1 / 6 strings', 'scrolling preserves hunt progress'
                     client.js("['1:5','2:9','3:2','4:7','5:0'].forEach(id=>document.querySelector('[data-position=\"'+id+'\"]').click())")
                     client.until("!document.getElementById('next').hidden")
                     client.js("document.getElementById('next').click()")
                     client.until("document.getElementById('board-scroll').scrollTop<1 && document.getElementById('question-start').getBoundingClientRect().top>=-1 && document.getElementById('question-start').getBoundingClientRect().bottom<innerHeight")
+                    client.until("document.getElementById('floating-question').hidden")
                     assert client.js("document.getElementById('round-count').textContent") == '0 / 6 strings', 'next note resets board and progress'
                     client.call('Emulation.clearDeviceMetricsOverride')
                 assert client.js("localStorage.getItem('pwa-progress-check')") == 'preserved'
