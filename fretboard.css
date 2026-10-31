@@ -125,7 +125,7 @@
 .vertical-board .fret span { width: 28px; height: 28px; min-width: 28px; min-height: 28px; line-height: 1; }
 
 /* The whole page scrolls in vertical mode; every fret remains reachable. */
-.vertical-practice .board-scroll { overflow-x: visible; overflow-y: visible; }
+.vertical-practice .board-scroll { display: contents; }
 .vertical-practice .note-prompt h3 { font-size: 20px; margin-bottom: 4px; }
 .floating-question { position: fixed; top: 0; z-index: 5; padding: 12px 16px; background: var(--tint); color: var(--tone-tint-ink); border-bottom: 1px solid var(--line); }
 .floating-question strong { display: block; font: 500 18px/1.4 'Fredoka', sans-serif; color: var(--primary); overflow-wrap: anywhere; }

@@ -171,8 +171,7 @@ with TemporaryDirectory(prefix='guitar-pwa-') as directory:
                     client.js("document.getElementById('question-start').scrollIntoView({block:'start',behavior:'instant'})")
                     assert client.js("getComputedStyle(document.querySelector('.note-prompt')).position==='static'"), 'question stays in normal flow'
                     client.until("document.getElementById('floating-question').hidden")
-                    assert client.js("document.getElementById('board-scroll').clientHeight>=document.getElementById('fretboard').offsetHeight"), 'vertical board has no internal scroll limit'
-                    assert client.js("getComputedStyle(document.getElementById('board-scroll')).overflowY==='visible'"), 'vertical board scrolls with the page'
+                    assert client.js("getComputedStyle(document.getElementById('board-scroll')).display==='contents' && document.getElementById('board-scroll').scrollTop===0"), 'vertical board wrapper creates no scroll box'
                     client.js("document.querySelector('[data-position=\"0:10\"]').scrollIntoView({block:'center',behavior:'instant'})")
                     client.until("!document.getElementById('floating-question').hidden")
                     assert client.js("document.querySelector('#floating-question strong').textContent==='Find E · every string'"), 'separate reminder shows current question'
