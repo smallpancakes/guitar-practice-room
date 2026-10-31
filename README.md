@@ -167,3 +167,5 @@ For a stuck app version, use **Refresh app / 更新 App** in the footer, or open
 Guitar-note playback, staff-note playback and the metronome request `navigator.audioSession.type = "playback"` where available, before starting Web Audio. This is intended to allow sound through iPhone Silent Mode in Safari and the installed PWA. Media volume and in-app mute still apply; other media apps may be interrupted. Unsupported or rejected requests fall back to normal browser audio. Physical iPhone verification is still needed. Microphone practice does not request this playback-only session.
 
 Safari tabs cannot reliably detect a separate Home Screen installation. Choose **Already installed / 已經安裝了** in the install guide to hide the prominent install entry in that browser. The preference persists across tools and visits; **Install guide / 安裝說明** in the footer restores it. Standalone app windows hide both installation controls.
+
+Dismissing the install entry shows an inline confirmation pointing to the footer, with Show install guide to undo immediately and Got it to dismiss the hint. Keyboard focus stays at the visible confirmation instead of moving to the off-screen footer.

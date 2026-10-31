@@ -1,5 +1,8 @@
 // English source messages are the stable catalog keys. Keep chord and note symbols unchanged.
 export default {
+  "Install button hidden. You can find Install guide at the bottom of any page.": "已隱藏安裝按鈕。之後可在每頁底部找到「安裝說明」。",
+  "Show install guide": "顯示安裝說明",
+  "Got it": "知道了",
   "Already installed": "已經安裝了",
   "Install guide": "安裝說明",
   "Refresh app": "更新 App",

@@ -32,6 +32,14 @@ if ('serviceWorker' in navigator && window.isSecureContext && window.top === win
   const guideActions = document.createElement('div'); guideActions.className = 'pwa-guide-actions'; guideActions.append(close, dismiss);
   help.append(title, hint, steps, guideStatus, guideActions); entry.append(install, help);
   document.querySelector('.tool-nav').after(entry);
+  const notice = document.createElement('div'); notice.id = 'pwa-install-dismissed'; notice.className = 'pwa-dismiss-notice'; notice.hidden = true; notice.tabIndex = -1;
+  const noticeText = document.createElement('p'); noticeText.id = 'pwa-dismiss-message'; noticeText.setAttribute('role', 'status');
+  noticeText.textContent = t('Install button hidden. You can find Install guide at the bottom of any page.');
+  notice.setAttribute('aria-labelledby', noticeText.id);
+  const reopen = document.createElement('button'); reopen.type = 'button'; reopen.className = 'text-button'; reopen.textContent = t('Show install guide');
+  const acknowledge = document.createElement('button'); acknowledge.type = 'button'; acknowledge.className = 'text-button'; acknowledge.textContent = t('Got it');
+  const noticeActions = document.createElement('div'); noticeActions.className = 'pwa-guide-actions'; noticeActions.append(reopen, acknowledge);
+  notice.append(noticeText, noticeActions); entry.after(notice);
   const refresh = document.createElement('a'); refresh.href = './update.html'; refresh.textContent = t('Refresh app'); refresh.className = 'text-button';
   const guideLink = document.createElement('button'); guideLink.id = 'pwa-install-guide-link'; guideLink.type = 'button'; guideLink.className = 'text-button'; guideLink.textContent = t('Install guide'); guideLink.hidden = true;
   footer.append(status, retry, guideLink, refresh); document.querySelector('main').append(footer);
@@ -43,12 +51,15 @@ if ('serviceWorker' in navigator && window.isSecureContext && window.top === win
     try { if (value) localStorage.setItem(dismissalKey, 'yes'); else localStorage.removeItem(dismissalKey); } catch { /* Storage is optional. */ }
     syncVisibility();
   }
-  dismiss.addEventListener('click', () => { saveDismissal(true); guideLink.focus({ preventScroll: true }); });
-  guideLink.addEventListener('click', () => { saveDismissal(false); showGuide(true); install.focus(); });
+  dismiss.addEventListener('click', () => { saveDismissal(true); notice.hidden = false; notice.focus(); });
+  function reopenGuide() { saveDismissal(false); showGuide(true); install.focus(); }
+  guideLink.addEventListener('click', reopenGuide);
+  reopen.addEventListener('click', reopenGuide);
+  acknowledge.addEventListener('click', () => { notice.hidden = true; document.querySelector('.tool-nav [aria-current="page"]')?.focus({ preventScroll: true }); });
   window.addEventListener('storage', event => { if (event.key === dismissalKey || event.key === null) { dismissed = event.newValue === 'yes'; syncVisibility(); } });
   const display = matchMedia('(display-mode: standalone)');
   const standalone = () => display.matches || navigator.standalone || installed;
-  function syncVisibility() { entry.hidden = Boolean(standalone() || dismissed); guideLink.hidden = Boolean(standalone() || !dismissed); if (entry.hidden) showGuide(false); }
+  function syncVisibility() { entry.hidden = Boolean(standalone() || dismissed); guideLink.hidden = Boolean(standalone() || !dismissed); if (entry.hidden) showGuide(false); if (standalone() || !dismissed) notice.hidden = true; }
   syncVisibility(); display.addEventListener('change', syncVisibility);
   window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferred = event; syncVisibility(); });
   install.addEventListener('click', async () => {

@@ -115,6 +115,12 @@ with TemporaryDirectory(prefix='guitar-pwa-') as directory:
             assert client.js("!!document.getElementById('pwa-installed')"), 'already-installed dismissal is available'
             client.js("document.querySelector('.pwa-install-button').click();document.getElementById('pwa-installed').click()")
             assert client.js("document.querySelector('.pwa-install').hidden && !document.getElementById('pwa-install-guide-link').hidden"), 'dismissed entry stays accessible through footer'
+            assert client.js("!document.getElementById('pwa-install-dismissed').hidden && document.getElementById('pwa-dismiss-message').textContent.includes('每頁底部')"), 'dismissal explains where to find installation again'
+            assert client.js("document.activeElement.id==='pwa-install-dismissed'"), 'focus remains at visible confirmation'
+            client.js("document.querySelector('#pwa-install-dismissed button').click()")
+            assert client.js("!document.getElementById('install-guide').hidden && document.getElementById('pwa-install-dismissed').hidden"), 'confirmation restores guide directly'
+            client.js("document.getElementById('pwa-installed').click();document.querySelector('#pwa-install-dismissed button:last-child').click()")
+            assert client.js("document.getElementById('pwa-install-dismissed').hidden && document.querySelector('.pwa-install').hidden"), 'acknowledging keeps installation dismissed'
             client.call('Page.navigate', {'url':url+'metronome.html?lang=zh-Hant'})
             client.until("document.querySelector('.pwa-install')?.hidden && !!document.getElementById('pwa-install-guide-link')")
             client.js("document.getElementById('pwa-install-guide-link').click()")
