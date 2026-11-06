@@ -12,6 +12,9 @@ const requested = new URLSearchParams(location.search).get('lang');
 if (['en', 'zh-Hant'].includes(requested)) zh = requested === 'zh-Hant';
 document.documentElement.lang = zh ? 'zh-Hant' : 'en';
 for (const el of document.querySelectorAll('[data-zh]')) if (zh) el.textContent = el.dataset.zh;
+if (zh) document.title = '更新 App · 吉他練習室';
+document.querySelector('a[href="./"]').href = './?lang=' + (zh ? 'zh-Hant' : 'en');
+document.documentElement.removeAttribute('data-i18n-pending');
 const say = (en, chinese) => status.textContent = zh ? chinese : en;
 function installed(worker) {
   return new Promise((resolve, reject) => {

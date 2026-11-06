@@ -85,6 +85,7 @@ function showHuntResults() {
   }));
 }
 $('hunt-start').addEventListener('click', startHunt);
+$('hunt-restart').addEventListener('click', startHunt);
 const openNotesKey = 'practice-room.fretboard.open-notes.v1';
 try { $('six-open-notes').checked = storage?.getItem(openNotesKey) !== 'off'; } catch { /* Keep the default labels. */ }
 const hideOpenNotes = () => !$('six-open-notes').checked;
@@ -123,8 +124,8 @@ function renderSix() {
   $('prompt-help').textContent = huntPhase === 'result' ? '' : t('One position per string · frets 0–12');
   for (const id of ['start', 'explore', 'reveal', 'remembered', 'missed', 'advance', 'typed-answer-form', 'note-answers', 'staff-answer', 'notation-error']) setVisible(id, false);
   $('six-note').disabled = huntPhase === 'playing'; $('hunt-count').disabled = huntPhase === 'playing'; $('hunt-custom').disabled = huntPhase === 'playing'; $('six-accidentals').disabled = huntPhase === 'playing';
-  setVisible('hunt-start', huntPhase !== 'playing');
-  $('hunt-start').textContent = huntPhase === 'result' ? t('Practice another round') : t('Start note hunt');
+  setVisible('hunt-start-row', huntPhase === 'ready');
+  setVisible('hunt-restart', huntPhase === 'result');
   setVisible('hunt-results', huntPhase === 'result');
   if (huntPhase === 'result') showHuntResults();
   setVisible('round-count', huntPhase === 'playing'); setVisible('next', huntPhase === 'playing' && sixFound.size === 6);
@@ -145,7 +146,7 @@ function answerSix(p) {
   }
   render();
   if (sixFound.size === 6) {
-    const button = $(huntPhase === 'result' ? 'hunt-start' : 'next');
+    const button = $(huntPhase === 'result' ? 'hunt-restart' : 'next');
     button.focus({ preventScroll: true });
     button.scrollIntoView({ block: 'center', inline: 'nearest' });
   }
@@ -406,7 +407,7 @@ function render() {
   document.querySelector('.sidebar').hidden = onSix();
   $('scope').closest('label').hidden = onSix();
   setVisible('six-note-control', onSix());
-  if (!onSix()) { setVisible('hunt-start', false); setVisible('hunt-results', false); }
+  if (!onSix()) { setVisible('hunt-start-row', false); setVisible('hunt-restart', false); setVisible('hunt-results', false); }
   setVisible('open-notes-control', true);
   if (onSix()) { renderSix(); return; }
   lockLanguage(phase === 'quiz');

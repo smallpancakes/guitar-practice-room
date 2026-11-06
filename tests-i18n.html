@@ -15,6 +15,17 @@ await test('Locale detection, explicit preference and unsupported-language fallb
  assert(resolveLocale(null,null,['fr','zh-TW','en'])==='zh-Hant');assert(resolveLocale(null,null,['en-GB','zh-TW'])==='en');assert(resolveLocale(null,null,[])==='en');
  assert(resolveLocale(null,'en',['zh-TW'])==='en');assert(resolveLocale('zh-Hant','en',['en'])==='zh-Hant');assert(resolveLocale('invalid','invalid',['en'])==='en');
 });
+await test('Chinese pages hide English until translation is ready',async()=>{
+ const boot=await (await fetch('language-boot.js')).text();
+ for(const page of ['index.html','metronome.html','fretboard.html','staff.html','update.html']){
+  const source=await (await fetch(page)).text();
+  assert(source.indexOf('language-boot.js')>0 && source.indexOf('language-boot.js')<source.indexOf('<body'),page+' boot timing');
+  assert(source.includes('html[data-i18n-pending] body{visibility:hidden}'),page+' hide rule');
+ }
+ assert(boot.includes("setAttribute('data-i18n-pending'"),'boot must hide Chinese');
+ assert((await (await fetch('i18n.js')).text()).includes("removeAttribute('data-i18n-pending')"),'translation must reveal');
+ assert((await (await fetch('refresh.js')).text()).includes("removeAttribute('data-i18n-pending')"),'update page must reveal');
+});
 await test('All tools translate headings, labels, metadata and levels at desktop and mobile widths',async()=>{
  for(const page of ['index.html','metronome.html','fretboard.html','staff.html']){
   await load(page+'?lang=zh-Hant');

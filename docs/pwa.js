@@ -52,7 +52,7 @@ if ('serviceWorker' in navigator && window.isSecureContext && window.top === win
     updateMessage.textContent = t('New version ready');
     updateNotice.hidden = false;
   }
-  const refresh = document.createElement('a'); refresh.href = './update.html'; refresh.textContent = t('Refresh app'); refresh.className = 'text-button';
+  const refresh = document.createElement('a'); refresh.href = './update.html?lang=' + document.documentElement.lang; refresh.textContent = t('Refresh app'); refresh.className = 'text-button';
   const guideLink = document.createElement('button'); guideLink.id = 'pwa-install-guide-link'; guideLink.type = 'button'; guideLink.className = 'text-button'; guideLink.textContent = t('Install guide'); guideLink.hidden = true;
   footer.append(status, retry, guideLink, refresh); document.querySelector('main').append(footer);
   let deferred, installed = false, dismissed = false;

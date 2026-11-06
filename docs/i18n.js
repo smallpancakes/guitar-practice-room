@@ -51,6 +51,7 @@ if (select) {
   document.documentElement.lang = locale;
   translateMarkup(document.documentElement);
   select.value = locale;
+  document.documentElement.removeAttribute('data-i18n-pending');
   // Query parameters also carry the preference when browser storage is unavailable.
   if (locale !== 'en' || new URLSearchParams(location.search).has('lang')) for (const link of document.querySelectorAll('.tool-nav a, .wordmark, a[href="fretboard.html"]')) {
     const url = new URL(link.href);

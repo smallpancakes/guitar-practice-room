@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <style>html[data-i18n-pending] body{visibility:hidden}</style><script src="language-boot.js"></script>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,7 +13,7 @@
   <script src="palette.js"></script><link rel="stylesheet" href="palettes.css">
   <title>smallpancakes’s guitar practice room · Fretboard</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="stylesheet" href="style.css?v=9"><link rel="stylesheet" href="fretboard.css?v=18">
+  <link rel="stylesheet" href="style.css?v=9"><link rel="stylesheet" href="fretboard.css?v=19">
   <link rel="stylesheet" href="staff-answer.css?v=4">
   <script type="module" src="fretboard.js?v=21"></script>
 </head>
@@ -35,6 +36,7 @@
           <label for="practice-mode">Answer with<select id="practice-mode"><option value="screen" selected>Note names · C D E</option><option value="staff">Place a note on the staff</option><option value="guitar">My guitar · self-check</option></select></label>
           <div id="six-note-control" hidden><label for="six-note">Find note<select id="six-note"></select></label><label for="hunt-count">Questions<select id="hunt-count"><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option><option value="custom">Custom</option></select></label><label id="hunt-custom-control" for="hunt-custom" hidden>Custom questions<input id="hunt-custom" type="number" min="1" max="100" step="1" value="10" inputmode="numeric" aria-describedby="hunt-count-error"></label><p id="hunt-count-error" class="error" role="alert" hidden></p><label class="six-accidentals"><input id="six-accidentals" type="checkbox">Include sharps &amp; flats</label></div>
         </div>
+        <div id="hunt-start-row" class="hunt-start-row" hidden><button id="hunt-start" class="primary" type="button">Start note hunt</button></div>
         <div class="board-toolbar"><p class="board-caption" id="board-caption">B is the second-thinnest string. 0 means play it open.</p><div class="board-tools"><label id="open-notes-control" class="open-notes-control" hidden><input id="six-open-notes" type="checkbox" checked>Show open-string notes</label><button id="fret-sound" class="secondary audio-button" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4Z"/><path class="sound-waves" d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="sound-cross" d="m17 9 5 6m0-6-5 6"/></svg><span id="fret-sound-label">Sound on</span></button></div></div>
         <div class="board-orientation" role="group" aria-label="Fretboard layout"><button id="board-vertical" type="button" aria-pressed="false">Vertical</button><button id="board-horizontal" type="button" aria-pressed="true">Horizontal</button></div>
         <div id="question-start"><div class="note-prompt"><h3 id="prompt">Start with C, D & E</h3><p id="prompt-help">Tap a note to hear it.</p></div></div>
@@ -57,7 +59,7 @@
           <button id="remembered" class="primary" hidden>I knew it</button>
           <button id="missed" class="secondary" hidden>Still learning</button>
           <button id="next" class="primary" hidden>Next question</button>
-          <button id="hunt-start" class="primary" hidden>Start note hunt</button>
+          <button id="hunt-restart" class="primary" hidden>Practice another round</button>
           <button id="advance" class="primary" hidden>Next level</button>
           <button id="explore" class="secondary" hidden>Back to explore</button>
         </div>
