@@ -43,6 +43,48 @@ renderSound();
 let sixActive = false;
 const onSix = () => sixActive;
 let sixFound = new Map(), sixWrong;
+let huntPhase = 'ready', huntAnswers = [], huntStarted = 0, huntMistakes = 0, huntQuestionCount = 10;
+const huntTotal = () => huntQuestionCount;
+const seconds = ms => `${(ms / 1000).toFixed(1)} ${t('s')}`;
+function updateHuntCount() {
+  setVisible('hunt-custom-control', $('hunt-count').value === 'custom');
+  setVisible('hunt-count-error', false);
+}
+$('hunt-count').addEventListener('change', updateHuntCount);
+$('hunt-custom').addEventListener('input', () => setVisible('hunt-count-error', false));
+function startHunt() {
+  const custom = $('hunt-count').value === 'custom';
+  if (custom && (!$('hunt-custom').validity.valid || !/^[1-9]\d*$/.test($('hunt-custom').value))) {
+    $('hunt-count-error').textContent = t('Enter a whole number from 1 to 100.');
+    setVisible('hunt-count-error', true); $('hunt-custom').focus(); return;
+  }
+  huntQuestionCount = custom ? Number($('hunt-custom').value) : Number($('hunt-count').value);
+  huntAnswers = []; huntPhase = 'playing'; huntMistakes = 0; huntStarted = performance.now();
+  sixFound.clear(); sixWrong = undefined; render();
+  $('fretboard').querySelector('.fret[tabindex="0"]')?.focus();
+}
+function finishHuntQuestion() {
+  huntAnswers.push({ pitch: Number($('six-note').value), duration: performance.now() - huntStarted, mistakes: huntMistakes });
+  if (huntAnswers.length === huntTotal()) huntPhase = 'result';
+}
+function showHuntResults() {
+  const average = huntAnswers.reduce((sum, item) => sum + item.duration, 0) / huntAnswers.length;
+  $('hunt-average').textContent = t`Average time: ${seconds(average)} per note`;
+  const byPitch = new Map();
+  for (const item of huntAnswers) {
+    const entry = byPitch.get(item.pitch) || { count: 0, duration: 0, mistakes: 0 };
+    entry.count++; entry.duration += item.duration; entry.mistakes += item.mistakes;
+    byPitch.set(item.pitch, entry);
+  }
+  const ranked = [...byPitch].sort((a, b) => b[1].mistakes - a[1].mistakes || b[1].duration / b[1].count - a[1].duration / a[1].count);
+  $('hunt-weak').textContent = t`Needs practice: ${NAMES[ranked[0][0]]}`;
+  $('hunt-details').replaceChildren(...ranked.map(([pitch, item]) => {
+    const row = document.createElement('li');
+    row.textContent = t`${NAMES[pitch]} · ${seconds(item.duration / item.count)} average · ${item.mistakes} wrong taps`;
+    return row;
+  }));
+}
+$('hunt-start').addEventListener('click', startHunt);
 const openNotesKey = 'practice-room.fretboard.open-notes.v1';
 try { $('six-open-notes').checked = storage?.getItem(openNotesKey) !== 'off'; } catch { /* Keep the default labels. */ }
 const hideOpenNotes = () => !$('six-open-notes').checked;
@@ -68,6 +110,7 @@ $('six-accidentals').addEventListener('change', () => {
 });
 function resetSix() {
   sixFound.clear(); sixWrong = undefined; $('feedback').textContent = '';
+  if (huntPhase === 'playing') { huntMistakes = 0; huntStarted = performance.now(); }
   render(); $('board-scroll').scrollTo({ top: 0, left: 0 });
 }
 $('six-note').addEventListener('change', resetSix);
@@ -75,27 +118,36 @@ function renderSix() {
   lockLanguage(false);
   $('practice-mode').disabled = false;
   $('stage-title').textContent = t('Note hunt');
-  $('round-count').textContent = t`${sixFound.size} / 6 strings`;
-  $('prompt').textContent = t`Find ${NAMES[Number($('six-note').value)]} on every string`;
-  $('prompt-help').textContent = t('One position per string · frets 0–12');
+  $('round-count').textContent = huntPhase === 'playing' ? t`${huntAnswers.length + 1} of ${huntTotal()}` : '';
+  $('prompt').textContent = huntPhase === 'result' ? t('Round complete') : t`Find ${NAMES[Number($('six-note').value)]} on every string`;
+  $('prompt-help').textContent = huntPhase === 'result' ? '' : t('One position per string · frets 0–12');
   for (const id of ['start', 'explore', 'reveal', 'remembered', 'missed', 'advance', 'typed-answer-form', 'note-answers', 'staff-answer', 'notation-error']) setVisible(id, false);
-  setVisible('round-count', true); setVisible('next', sixFound.size === 6);
+  $('six-note').disabled = huntPhase === 'playing'; $('hunt-count').disabled = huntPhase === 'playing'; $('hunt-custom').disabled = huntPhase === 'playing'; $('six-accidentals').disabled = huntPhase === 'playing';
+  setVisible('hunt-start', huntPhase !== 'playing');
+  $('hunt-start').textContent = huntPhase === 'result' ? t('Practice another round') : t('Start note hunt');
+  setVisible('hunt-results', huntPhase === 'result');
+  if (huntPhase === 'result') showHuntResults();
+  setVisible('round-count', huntPhase === 'playing'); setVisible('next', huntPhase === 'playing' && sixFound.size === 6);
   $('next').textContent = t('Next note');
   $('keyboard-help').textContent = t('Keyboard: Tab to a control, then Enter to use it. Arrow keys move between fret positions and note choices.');
   board(); tabStops();
 }
 function answerSix(p) {
+  if (huntPhase !== 'playing') return;
   if (sixFound.has(p.string)) return;
   if (p.midi % 12 === Number($('six-note').value)) {
     sixFound.set(p.string, p.id); sixWrong = undefined;
+    if (sixFound.size === 6) finishHuntQuestion();
     $('feedback').textContent = sixFound.size === 6 ? t('All six found') : t`${sixFound.size} / 6 strings`;
   } else {
+    huntMistakes++;
     sixWrong = p.id; $('feedback').textContent = t`${p.name} · try another fret`;
   }
   render();
   if (sixFound.size === 6) {
-    $('next').focus({ preventScroll: true });
-    $('next').scrollIntoView({ block: 'center', inline: 'nearest' });
+    const button = $(huntPhase === 'result' ? 'hunt-start' : 'next');
+    button.focus({ preventScroll: true });
+    button.scrollIntoView({ block: 'center', inline: 'nearest' });
   }
   else {
     const focus = sixFound.has(p.string) ? [...$('fretboard').querySelectorAll('.fret')].find(b => !sixFound.has(Number(b.dataset.position.split(':')[0]))) : $('fretboard').querySelector(`[data-position="${p.id}"]`);
@@ -354,6 +406,7 @@ function render() {
   document.querySelector('.sidebar').hidden = onSix();
   $('scope').closest('label').hidden = onSix();
   setVisible('six-note-control', onSix());
+  if (!onSix()) { setVisible('hunt-start', false); setVisible('hunt-results', false); }
   setVisible('open-notes-control', true);
   if (onSix()) { renderSix(); return; }
   lockLanguage(phase === 'quiz');
@@ -426,9 +479,10 @@ for (const [id, correct] of [['remembered', true], ['missed', false]]) $(id).add
 $('start').addEventListener('click', () => { if (onStaff() && !notationReady) return; stopAudio(); phase = 'quiz'; question = 0; score = 0; seen.clear(); nextQuestion(); });
 $('next').addEventListener('click', () => {
   if (onSix()) {
-    if (sixFound.size !== 6) return;
+    if (huntPhase !== 'playing' || sixFound.size !== 6) return;
     const current = Number($('six-note').value);
-    const choices = sixPitches().filter(pitch => pitch !== current);
+    const unused = sixPitches().filter(pitch => !huntAnswers.some(item => item.pitch === pitch));
+    const choices = unused.length ? unused : sixPitches().filter(pitch => pitch !== current);
     $('six-note').value = choices[Math.floor(Math.random() * choices.length)];
     resetSix(); $('fretboard').querySelector('.fret').focus({ preventScroll: true });
     // Cancel any completion scroll, then return after the new layout settles.
@@ -465,7 +519,7 @@ $('explore').addEventListener('click', explore);
 for (const [id, six] of [['exercise-levels', false], ['exercise-six', true]]) {
   $(id).addEventListener('click', () => {
     if (sixActive === six) return;
-    sixActive = six; sixFound.clear(); sixWrong = undefined;
+    sixActive = six; sixFound.clear(); sixWrong = undefined; huntPhase = 'ready'; huntAnswers = [];
     setVisible('level-celebration', false); explore();
   });
 }
